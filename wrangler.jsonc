@@ -2,6 +2,9 @@
 	// Static site: Cloudflare serves the files in ./site, no Worker script needed
 	"name": "keyring-maker",
 	"compatibility_date": "2026-11-06",
+	// Keep the public workers.dev address and preview addresses switched on across deploys
+	"workers_dev": true,
+	"preview_urls": true,
 	"assets": {
 		"directory": "./site"
 	}
