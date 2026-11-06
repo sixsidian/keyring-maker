@@ -1,0 +1,10 @@
+# Name Keyring Maker
+
+Web page that turns typed text into a two-colour 3D-printable keyring (raised lettering on a solid base with a key loop) and downloads it as a .3mf (filament slots set for Bambu Studio) or a single .stl.
+
+- `site/index.html` - the published page (built, self-contained). Cloudflare Pages serves the `site` folder.
+- `src/` - source: `template.html` (page), `kcore.js` (geometry), `fonts/` (Google Fonts, Open Font License / Apache), `lib/` (opentype.js, clipper-lib, earcut, fflate).
+
+Rebuild after editing `src/`:
+
+    python3 src/build.py

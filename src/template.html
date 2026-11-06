@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Name Keyring Maker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  /* Layout: controls column beside a build-plate preview that shows the keyring at true proportions on a 10mm grid. */
+  --bg: #f3f1ec;
+  --panel: #ffffff;
+  --ink: #1d1c1a;
+  --muted: #6b665d;
+  --line: #dcd7cc;
+  --accent: #b8860b;
+  --accent-ink: #ffffff;
+  --plate: #24262b;
+  --plate-grid: #34373e;
+  --plate-ink: #c9ccd3;
+  --ok: #2f7a43; --ok-bg: #e3f1e6;
+  --warn: #8a5a00; --warn-bg: #fbefd5;
+  --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #17181b; --panel: #202226; --ink: #ecebe8; --muted: #a29d93; --line: #34363c;
+    --accent: #e0aa3e; --accent-ink: #1a1405; --plate: #101114; --plate-grid: #23252b; --plate-ink: #b9bcc4;
+    --ok: #8fd19e; --ok-bg: #1d3324; --warn: #f2c46b; --warn-bg: #3a2d12; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #17181b; --panel: #202226; --ink: #ecebe8; --muted: #a29d93; --line: #34363c;
+  --accent: #e0aa3e; --accent-ink: #1a1405; --plate: #101114; --plate-grid: #23252b; --plate-ink: #b9bcc4;
+  --ok: #8fd19e; --ok-bg: #1d3324; --warn: #f2c46b; --warn-bg: #3a2d12; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 16px; line-height: 1.5; }
+.wrap { max-width: 1180px; margin: 0 auto; padding: 28px 20px 40px; display: grid; gap: 22px; }
+header h1 { font-family: var(--font-display); font-weight: 800; font-size: 2rem; line-height: 1.1; margin: 0 0 6px; text-wrap: balance; letter-spacing: -0.01em; }
+header p { margin: 0; color: var(--muted); max-width: 62ch; }
+.grid { display: grid; grid-template-columns: minmax(280px, 340px) 1fr; gap: 22px; align-items: start; }
+@media (max-width: 820px) { .grid { grid-template-columns: 1fr; } }
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 20px; display: grid; gap: 18px; }
+.field { display: grid; gap: 6px; }
+.field > label, .label { font-weight: 700; font-size: 0.95rem; display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.hint { color: var(--muted); font-size: 0.85rem; font-weight: 400; font-variant-numeric: tabular-nums; }
+input[type="text"], select {
+  width: 100%; font: inherit; color: var(--ink); background: var(--bg); border: 1px solid var(--line);
+  border-radius: 8px; padding: 10px 12px; }
+input[type="text"] { font-size: 1.1rem; }
+input[type="range"] { width: 100%; accent-color: var(--accent); }
+.row { display: flex; gap: 12px; align-items: center; }
+.swatches { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.swatch { display: flex; align-items: center; gap: 10px; border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; background: var(--bg); }
+.swatch input[type="color"] { width: 34px; height: 34px; border: none; padding: 0; background: none; cursor: pointer; }
+.swatch span { display: grid; line-height: 1.2; font-size: 0.9rem; }
+.swatch small { color: var(--muted); }
+.check { display: flex; gap: 10px; align-items: flex-start; font-size: 0.95rem; }
+.check input { margin-top: 4px; accent-color: var(--accent); width: 18px; height: 18px; }
+button.primary {
+  font: inherit; font-weight: 700; font-size: 1.05rem; background: var(--accent); color: var(--accent-ink);
+  border: none; border-radius: 10px; padding: 13px 16px; cursor: pointer; width: 100%; }
+button.primary:disabled { opacity: 0.5; cursor: progress; }
+button.secondary { font: inherit; background: transparent; color: var(--ink); border: 1px solid var(--line); border-radius: 8px; padding: 8px 12px; cursor: pointer; }
+button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.dl-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+button.primary small { display: block; font-weight: 400; font-size: 0.8rem; opacity: 0.85; }
+button.primary.alt { background: transparent; color: var(--ink); border: 2px solid var(--accent); }
+.msg { font-size: 0.9rem; color: var(--muted); min-height: 1.4em; }
+.stage { display: grid; gap: 14px; }
+.plate {
+  background-color: var(--plate); border-radius: 14px; padding: 18px; min-height: 260px; position: relative;
+  display: grid; place-items: center; overflow-x: auto; }
+.plate svg { display: block; width: 100%; height: auto; max-height: 360px; }
+.busy { position: absolute; top: 12px; right: 14px; color: var(--plate-ink); font-size: 0.85rem; opacity: 0; transition: opacity .15s; }
+.busy.on { opacity: 1; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip { border-radius: 999px; padding: 5px 12px; font-size: 0.9rem; border: 1px solid var(--line); background: var(--panel); font-variant-numeric: tabular-nums; }
+.chip.ok { background: var(--ok-bg); color: var(--ok); border-color: transparent; }
+.chip.warn { background: var(--warn-bg); color: var(--warn); border-color: transparent; }
+.chip b { font-weight: 700; }
+.spec { color: var(--muted); font-size: 0.9rem; margin: 0; }
+.spec dl { display: grid; grid-template-columns: auto 1fr; gap: 2px 14px; margin: 6px 0 0; }
+.spec dt { color: var(--ink); }
+.spec dd { margin: 0; font-variant-numeric: tabular-nums; }
+@media (prefers-reduced-motion: reduce) { .busy { transition: none; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Name Keyring Maker</h1>
+    <p>Type a name or message, pick a script font and letter height, then download two-colour print files: a raised lettering layer on a solid base with a key loop.</p>
+  </header>
+  <div class="grid">
+    <form class="panel" id="controls" autocomplete="off">
+      <div class="field">
+        <label for="text">Text <span class="hint" id="count">0 / 20</span></label>
+        <input type="text" id="text" maxlength="20" value="SampleText" spellcheck="false">
+      </div>
+      <div class="field">
+        <label for="font">Font</label>
+        <select id="font"></select>
+      </div>
+      <div class="field">
+        <label for="size">Letter height <span class="hint" id="sizeVal">9.0 mm</span></label>
+        <input type="range" id="size" min="5" max="14" step="0.5" value="9">
+        <span class="hint">Height of a capital letter. 9 mm matches the #Justice4Luce keyring.</span>
+      </div>
+      <label class="check" for="tight"><input type="checkbox" id="tight" checked>
+        <span>Close up wide letter gaps<br><span class="hint">Pulls widely spaced letters closer together, such as after a #. Spaces between words are kept.</span></span></label>
+      <div class="field">
+        <span class="label">Preview colours</span>
+        <div class="swatches">
+          <label class="swatch" for="cBase"><input type="color" id="cBase" value="#d4a52a"><span>Base<small>Filament 1</small></span></label>
+          <label class="swatch" for="cText"><input type="color" id="cText" value="#141414"><span>Lettering<small>Filament 2</small></span></label>
+        </div>
+      </div>
+      <div class="dl-row">
+        <button type="submit" class="primary" id="download" disabled>Download .3mf<small>Two colours, filament slots set</small></button>
+        <button type="button" class="primary alt" id="downloadStl" disabled>Download .stl<small>One piece, no colour data</small></button>
+      </div>
+      <div class="msg" id="msg" role="status" aria-live="polite">Loading fonts…</div>
+    </form>
+    <section class="stage" aria-label="Preview">
+      <div class="plate" id="plate"><span class="busy" id="busy">Updating…</span><svg id="svg" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Top view of the keyring"></svg></div>
+      <div class="chips" id="chips"></div>
+      <div class="spec">
+        Fixed settings, matching the printed keyrings:
+        <dl>
+          <dt>Thickness</dt><dd>3.0 mm total: 2.4 mm base, lettering raised 0.6 mm</dd>
+          <dt>Border</dt><dd>1.6 mm round the lettering</dd>
+          <dt>Key loop</dt><dd>8.4 mm across, 4.2 mm hole</dd>
+          <dt>.3mf</dt><dd>Base and lettering as two parts of one object, base on filament 1, lettering on filament 2</dd>
+          <dt>.stl</dt><dd>Base and lettering merged into one file with no colour data, for single-colour prints or other slicers</dd>
+        </dl>
+      </div>
+    </section>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/opentype.js@1.3.4/dist/opentype.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/clipper-lib@6.4.2/clipper.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/earcut@2.2.4/dist/earcut.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/fflate@0.8.2/umd/index.js"></script>
+<script>
+/*KCORE*/
+</script>
+<script>
+const FONT_DATA = /*FONTS*/;
+const FONT_LIST = [
+  ['Pattaya-Regular', 'Pattaya'],
+  ['OleoScript-Bold', 'Oleo Script Bold'],
+  ['LeckerliOne-Regular', 'Leckerli One'],
+  ['Pacifico-Regular', 'Pacifico'],
+  ['KaushanScript-Regular', 'Kaushan Script'],
+  ['Damion-Regular', 'Damion'],
+  ['LilyScriptOne-Regular', 'Lily Script One'],
+  ['Yellowtail-Regular', 'Yellowtail'],
+  ['GrandHotel-Regular', 'Grand Hotel'],
+  ['Courgette-Regular', 'Courgette'],
+  ['CaveatBrush-Regular', 'Caveat Brush'],
+  ['Knewave-Regular', 'Knewave'],
+  ['Sriracha-Regular', 'Sriracha'],
+  ['Kalam-Bold', 'Kalam Bold'],
+];
+const $ = id => document.getElementById(id);
+const els = { text: $('text'), font: $('font'), size: $('size'), tight: $('tight'), cBase: $('cBase'), cText: $('cText'),
+  count: $('count'), sizeVal: $('sizeVal'), svg: $('svg'), chips: $('chips'), msg: $('msg'), busy: $('busy'),
+  download: $('download'), downloadStl: $('downloadStl') };
+let K, fonts = {}, current = null, timer = null, downloads, downloadsChecked = false;
+
+function b64ToBuf(b64) { const s = atob(b64), u = new Uint8Array(s.length); for (let i = 0; i < s.length; i++) u[i] = s.charCodeAt(i); return u.buffer; }
+const r1 = n => n.toFixed(1);
+const cleanName = t => (t.replace(/[^A-Za-z0-9 ]+/g, ' ').replace(/\s+/g, ' ').trim() || 'Keyring');
+
+function setMsg(t) { els.msg.textContent = t; }
+
+function init() {
+  if (!window.opentype || !window.ClipperLib || !window.earcut || !window.fflate) {
+    setMsg('The page could not load its drawing libraries. Check your connection and reload.'); return;
+  }
+  K = window.KCore(window.ClipperLib, window.earcut, window.fflate);
+  for (const [id, label] of FONT_LIST) {
+    fonts[id] = opentype.parse(b64ToBuf(FONT_DATA[id]));
+    const o = document.createElement('option'); o.value = id; o.textContent = label; els.font.appendChild(o);
+  }
+  try { const saved = JSON.parse(localStorage.getItem('keyring-maker-v2') || 'null');
+    if (saved) { els.text.value = saved.text ?? els.text.value; els.font.value = saved.font || 'Pattaya-Regular'; els.size.value = saved.size || 9; els.tight.checked = saved.tight !== false; els.cBase.value = saved.cBase || els.cBase.value; els.cText.value = saved.cText || els.cText.value; } } catch (e) {}
+  for (const el of [els.text, els.font, els.size, els.tight]) el.addEventListener('input', schedule);
+  for (const el of [els.cBase, els.cText]) el.addEventListener('input', () => { draw(); save(); });
+  els.size.addEventListener('input', () => { els.sizeVal.textContent = r1(+els.size.value) + ' mm'; });
+  $('controls').addEventListener('submit', e => { e.preventDefault(); download('3mf'); });
+  els.downloadStl.addEventListener('click', () => download('stl'));
+  setupDownloads();
+  schedule(0);
+}
+
+function save() {
+  try { localStorage.setItem('keyring-maker-v2', JSON.stringify({ text: els.text.value, font: els.font.value, size: +els.size.value, tight: els.tight.checked, cBase: els.cBase.value, cText: els.cText.value })); } catch (e) {}
+}
+
+function schedule(delay = 350) {
+  els.count.textContent = els.text.value.length + ' / 20';
+  els.sizeVal.textContent = r1(+els.size.value) + ' mm';
+  els.busy.classList.add('on'); setButtons(true);
+  clearTimeout(timer);
+  timer = setTimeout(rebuild, delay);
+}
+
+function rebuild() {
+  const text = els.text.value;
+  save();
+  if (!text.trim()) { current = null; els.svg.innerHTML = ''; els.chips.innerHTML = ''; els.busy.classList.remove('on'); setMsg('Type some text to see your keyring.'); return; }
+  const font = fonts[els.font.value];
+  const missing = [...text].filter(ch => ch !== ' ' && font.charToGlyph(ch).index === 0);
+  try {
+    const d = K.design(font, text, +els.size.value, els.tight.checked);
+    if (!d) throw new Error('empty');
+    current = { d, text, name: cleanName(text) + ' keyring', parts: null, missing: [...new Set(missing)] };
+    draw(); chips();
+    setButtons(false);
+    setMsg(downloadHint());
+  } catch (e) {
+    current = null; setMsg('That text could not be turned into a keyring. Try different characters or another font.');
+  }
+  els.busy.classList.remove('on');
+}
+
+function draw() {
+  if (!current) return;
+  const d = current.d, pad = 6, b = d.bounds;
+  const x0 = b.x0 - pad, y0 = b.y0 - pad, w = d.width + 2 * pad, h = d.height + 2 * pad;
+  const flip = b.y1 + b.y0; // mirror y around the design
+  let grid = '';
+  const gStart = Math.floor(x0 / 10) * 10, gyStart = Math.floor(y0 / 10) * 10;
+  for (let x = gStart; x <= x0 + w; x += 10) grid += `<line x1="${x}" y1="${y0}" x2="${x}" y2="${y0 + h}"/>`;
+  for (let y = gyStart; y <= y0 + h; y += 10) grid += `<line x1="${x0}" y1="${y}" x2="${x0 + w}" y2="${y}"/>`;
+  const base = K.svgPath(d.body, flip), text = K.svgPath(d.inlay, flip);
+  const sx = b.x0, sy = b.y1 + 3.2; // scale bar
+  els.svg.setAttribute('viewBox', `${x0} ${y0} ${w} ${h + 4}`);
+  els.svg.innerHTML =
+    `<g stroke="var(--plate-grid)" stroke-width="0.15">${grid}</g>` +
+    `<path d="${base}" transform="translate(0.45 0.6)" fill="#000" fill-opacity="0.45" fill-rule="evenodd"/>` +
+    `<path d="${base}" fill="${shade(els.cBase.value, -0.28)}" fill-rule="evenodd" transform="translate(0.2 0.3)"/>` +
+    `<path d="${base}" fill="${els.cBase.value}" fill-rule="evenodd"/>` +
+    `<path d="${text}" fill="${shade(els.cText.value, 0.18)}" fill-rule="evenodd" transform="translate(0.12 0.18)"/>` +
+    `<path d="${text}" fill="${els.cText.value}" fill-rule="evenodd"/>` +
+    `<g fill="var(--plate-ink)" stroke="var(--plate-ink)" font-family="Atkinson Hyperlegible, sans-serif" font-size="2.4">` +
+    `<line x1="${sx}" y1="${sy}" x2="${sx + 10}" y2="${sy}" stroke-width="0.3"/>` +
+    `<line x1="${sx}" y1="${sy - 0.8}" x2="${sx}" y2="${sy + 0.8}" stroke-width="0.3"/><line x1="${sx + 10}" y1="${sy - 0.8}" x2="${sx + 10}" y2="${sy + 0.8}" stroke-width="0.3"/>` +
+    `<text x="${sx + 11.2}" y="${sy + 0.85}" stroke="none">10 mm</text></g>`;
+}
+
+function shade(hex, amt) {
+  const n = parseInt(hex.slice(1), 16); let r = n >> 16, g = (n >> 8) & 255, bl = n & 255;
+  const f = v => Math.max(0, Math.min(255, Math.round(amt < 0 ? v * (1 + amt) : v + (255 - v) * amt)));
+  return '#' + [f(r), f(g), f(bl)].map(v => v.toString(16).padStart(2, '0')).join('');
+}
+
+function chips() {
+  const d = current.d, out = [];
+  out.push(`<span class="chip"><b>${r1(d.width)} × ${r1(d.height)} × 3.0 mm</b></span>`);
+  out.push(d.pieces === 1 ? '<span class="chip ok">One solid piece</span>' : `<span class="chip warn">Base splits into ${d.pieces} pieces: shorten the gap between words</span>`);
+  if (d.thinArea > 0) out.push(`<span class="chip warn">${d.thinArea} letter part${d.thinArea > 1 ? 's' : ''} under 0.8 mm wide: increase the letter height</span>`);
+  else out.push('<span class="chip ok">All strokes 0.8 mm or wider</span>');
+  if (d.width > 100) out.push('<span class="chip warn">Over 100 mm long: may bend, reduce the letter height</span>');
+  if (current.missing.length) out.push(`<span class="chip warn">Not in this font: ${current.missing.map(esc).join(' ')}</span>`);
+  els.chips.innerHTML = out.join('');
+}
+const esc = s => s.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+function ensureParts() { if (!current.parts) current.parts = K.meshes(current.d); return current.parts; }
+
+function setupDownloads() {
+  const done = ns => { downloads = ns; downloadsChecked = true; if (current) setMsg(downloadHint()); };
+  if (window.claude && typeof window.claude.use === 'function') {
+    window.claude.use('downloads').then(done, () => done(null));
+  } else done(null);
+}
+function downloadHint() {
+  if (!downloadsChecked) return 'Ready.';
+  return downloads ? 'Each download arrives as a .zip holding the file, because Claude pages cannot save .3mf or .stl directly.' : 'Ready to download.';
+}
+
+function setButtons(off) { els.download.disabled = off; els.downloadStl.disabled = off; }
+
+function mergedStl(parts) {
+  let nv = 0; const V = [], F = [];
+  for (const p of parts) { V.push(...p.mesh.V); for (const i of p.mesh.F) F.push(i + nv); nv += p.mesh.V.length / 3; }
+  return K.stl({ V: new Float32Array(V), F: new Uint32Array(F) });
+}
+
+async function download(kind) {
+  if (!current) return;
+  setButtons(true); setMsg('Building the file…');
+  await new Promise(r => setTimeout(r, 30));
+  try {
+    const parts = ensureParts();
+    const ext = kind === '3mf' ? '.3mf' : '.stl';
+    const bytes = kind === '3mf' ? K.threeMF(parts, current.text) : mergedStl(parts);
+    const fname = current.name + ext;
+    const after = kind === '3mf' ? 'Open the .3mf in Bambu Studio: base on filament 1, lettering on filament 2.' : 'The .stl loads as one object in one colour.';
+    if (downloads) {
+      const zip = fflate.zipSync({ [fname]: bytes });
+      try {
+        await downloads.save({ filename: current.name + ' ' + ext.slice(1) + '.zip', data: new Blob([zip]) });
+        setMsg('Saved. Unzip it first. ' + after);
+      } catch (err) {
+        const c = err && err.code;
+        setMsg(c === 'declined' ? 'Download cancelled.' : c === 'rate_limited' ? 'A download prompt is already open. Try again in a moment.' : 'Downloads are not available in this view. Open the page in claude.ai to download.');
+      }
+    } else {
+      saveDirect(fname, bytes);
+      setMsg('Saved. ' + after);
+    }
+  } catch (e) {
+    setMsg('Could not build the file for this text. Try another font or size.');
+  }
+  setButtons(false);
+}
+
+function saveDirect(name, bytes) {
+  const url = URL.createObjectURL(new Blob([bytes], { type: 'application/octet-stream' }));
+  const a = document.createElement('a'); a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 4000);
+}
+
+init();
+</script>
+</body>
+</html>
