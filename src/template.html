@@ -39,6 +39,7 @@
   --ok: #8fd19e; --ok-bg: #1d3324; --warn: #f2c46b; --warn-bg: #3a2d12; color-scheme: dark;
 }
 * { box-sizing: border-box; }
+[hidden] { display: none !important; }
 html, body { margin: 0; }
 body { background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 16px; line-height: 1.5; }
 .wrap { max-width: 1180px; margin: 0 auto; padding: 28px 20px 40px; display: grid; gap: 22px; }
@@ -64,7 +65,7 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
 .check { display: flex; gap: 10px; align-items: flex-start; font-size: 0.95rem; }
 .check input { margin-top: 4px; accent-color: var(--accent); width: 18px; height: 18px; }
 button.primary {
-  font: inherit; font-weight: 700; font-size: 1.05rem; background: var(--accent); color: var(--accent-ink);
+  font: inherit; font-weight: 700; font-size: 1rem; background: var(--accent); color: var(--accent-ink);
   border: none; border-radius: 10px; padding: 13px 16px; cursor: pointer; width: 100%; }
 button.primary:disabled { opacity: 0.5; cursor: progress; }
 button.secondary { font: inherit; background: transparent; color: var(--ink); border: 1px solid var(--line); border-radius: 8px; padding: 8px 12px; cursor: pointer; }
@@ -89,6 +90,19 @@ button.primary.alt { background: transparent; color: var(--ink); border: 2px sol
 .spec dl { display: grid; grid-template-columns: auto 1fr; gap: 2px 14px; margin: 6px 0 0; }
 .spec dt { color: var(--ink); }
 .spec dd { margin: 0; font-variant-numeric: tabular-nums; }
+.section-title { font-family: var(--font-display); font-weight: 600; font-size: 1.05rem; margin: 4px 0 -6px; padding-top: 14px; border-top: 1px solid var(--line); }
+.pair { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: var(--bg); }
+.seg button { font: inherit; font-size: 0.9rem; border: none; background: transparent; color: var(--ink); padding: 7px 12px; cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); font-weight: 700; }
+.seg.full { display: grid; grid-template-columns: repeat(var(--n), 1fr); }
+.stage-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
+.plate canvas { display: block; width: 100%; height: 340px; cursor: grab; touch-action: none; border-radius: 10px; }
+.plate canvas:active { cursor: grabbing; }
+.plate .hint3d { position: absolute; left: 16px; bottom: 12px; color: var(--plate-ink); font-size: 0.82rem; }
+.share { display: grid; gap: 8px; }
+.share-row { display: flex; gap: 8px; }
+.share-row input { flex: 1; min-width: 0; font: inherit; font-size: 0.85rem; color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; }
 @media (prefers-reduced-motion: reduce) { .busy { transition: none; } }
 </style>
 </head>
@@ -96,7 +110,7 @@ button.primary.alt { background: transparent; color: var(--ink); border: 2px sol
 <div class="wrap">
   <header>
     <h1>Name Keyring Maker</h1>
-    <p>Type a name or message, pick a script font and letter height, then download two-colour print files: a raised lettering layer on a solid base with a key loop.</p>
+    <p>Type a name or message, pick a font, size and finish, then download two-colour print files: lettering on a solid base with a key loop.</p>
   </header>
   <div class="grid">
     <form class="panel" id="controls" autocomplete="off">
@@ -109,36 +123,90 @@ button.primary.alt { background: transparent; color: var(--ink); border: 2px sol
         <select id="font"></select>
       </div>
       <div class="field">
-        <label for="size">Letter height <span class="hint" id="sizeVal">9.0 mm</span></label>
+        <label for="size">Letter height <span class="hint" id="sizeVal"></span></label>
         <input type="range" id="size" min="5" max="14" step="0.5" value="9">
         <span class="hint">Height of a capital letter. 9 mm matches the #Justice4Luce keyring.</span>
       </div>
       <label class="check" for="tight"><input type="checkbox" id="tight" checked>
         <span>Close up wide letter gaps<br><span class="hint">Pulls widely spaced letters closer together, such as after a #. Spaces between words are kept.</span></span></label>
+
+      <div class="section-title">Build</div>
       <div class="field">
-        <span class="label">Preview colours</span>
-        <div class="swatches">
-          <label class="swatch" for="cBase"><input type="color" id="cBase" value="#d4a52a"><span>Base<small>Filament 1</small></span></label>
-          <label class="swatch" for="cText"><input type="color" id="cText" value="#141414"><span>Lettering<small>Filament 2</small></span></label>
+        <span class="label">Lettering</span>
+        <div class="seg full" style="--n:2" role="group" aria-label="Lettering style">
+          <button type="button" id="styleRaised" aria-pressed="true">Raised</button>
+          <button type="button" id="styleFlush" aria-pressed="false">Flush</button>
+        </div>
+        <span class="hint" id="styleHint"></span>
+      </div>
+      <div class="pair">
+        <div class="field">
+          <label for="base">Base <span class="hint" id="baseVal"></span></label>
+          <input type="range" id="base" min="1.2" max="4" step="0.2" value="2.4">
+        </div>
+        <div class="field">
+          <label for="layer">Lettering <span class="hint" id="layerVal"></span></label>
+          <input type="range" id="layer" min="0.4" max="1.6" step="0.2" value="0.6">
         </div>
       </div>
+      <div class="field">
+        <label for="border">Border width <span class="hint" id="borderVal"></span></label>
+        <input type="range" id="border" min="1" max="3" step="0.2" value="1.6">
+      </div>
+      <div class="field">
+        <label for="loop">Key loop</label>
+        <select id="loop">
+          <option value="left">Left end</option>
+          <option value="right">Right end</option>
+          <option value="top">Top, centred</option>
+          <option value="none">No loop</option>
+        </select>
+      </div>
+      <div class="field" id="holeField">
+        <label for="hole">Hole size <span class="hint" id="holeVal"></span></label>
+        <input type="range" id="hole" min="3" max="6" step="0.2" value="4.2">
+        <span class="hint">The loop wall stays 2.1 mm thick round the hole.</span>
+      </div>
+
+      <div class="section-title">Colours</div>
+      <div class="swatches">
+        <label class="swatch" for="cBase"><input type="color" id="cBase" value="#d4a52a"><span>Base<small>Filament 1</small></span></label>
+        <label class="swatch" for="cText"><input type="color" id="cText" value="#141414"><span>Lettering<small>Filament 2</small></span></label>
+      </div>
+
       <div class="dl-row">
         <button type="submit" class="primary" id="download" disabled>Download .3mf<small>Two colours, filament slots set</small></button>
         <button type="button" class="primary alt" id="downloadStl" disabled>Download .stl<small>One piece, no colour data</small></button>
       </div>
+      <div class="share">
+        <span class="label">Share this design</span>
+        <div class="share-row">
+          <input type="text" id="shareUrl" readonly aria-label="Link to this design">
+          <button type="button" class="secondary" id="copyLink">Copy link</button>
+        </div>
+      </div>
       <div class="msg" id="msg" role="status" aria-live="polite">Loading fonts…</div>
     </form>
     <section class="stage" aria-label="Preview">
-      <div class="plate" id="plate"><span class="busy" id="busy">Updating…</span><svg id="svg" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Top view of the keyring"></svg></div>
+      <div class="stage-head">
+        <div class="seg" role="group" aria-label="Preview view">
+          <button type="button" id="viewTop" aria-pressed="true">Top view</button>
+          <button type="button" id="view3d" aria-pressed="false">3D view</button>
+        </div>
+        <button type="button" class="secondary" id="resetView" hidden>Reset view</button>
+      </div>
+      <div class="plate" id="plate">
+        <span class="busy" id="busy">Updating…</span>
+        <svg id="svg" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Top view of the keyring"></svg>
+        <canvas id="gl" hidden aria-label="3D view of the keyring, drag to rotate"></canvas>
+        <span class="hint3d" id="hint3d" hidden>Drag to rotate, scroll or pinch to zoom</span>
+      </div>
       <div class="chips" id="chips"></div>
       <div class="spec">
-        Fixed settings, matching the printed keyrings:
         <dl>
-          <dt>Thickness</dt><dd>3.0 mm total: 2.4 mm base, lettering raised 0.6 mm</dd>
-          <dt>Border</dt><dd>1.6 mm round the lettering</dd>
-          <dt>Key loop</dt><dd>8.4 mm across, 4.2 mm hole</dd>
           <dt>.3mf</dt><dd>Base and lettering as two parts of one object, base on filament 1, lettering on filament 2</dd>
           <dt>.stl</dt><dd>Base and lettering merged into one file with no colour data, for single-colour prints or other slicers</dd>
+          <dt>Defaults</dt><dd>Raised lettering, 2.4 mm base, 0.6 mm lettering, 1.6 mm border and a 4.2 mm hole, matching the printed keyrings</dd>
         </dl>
       </div>
     </section>
@@ -149,37 +217,59 @@ button.primary.alt { background: transparent; color: var(--ink); border: 2px sol
 <script src="https://cdn.jsdelivr.net/npm/clipper-lib@6.4.2/clipper.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/earcut@2.2.4/dist/earcut.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/fflate@0.8.2/umd/index.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"></script>
 <script>
 /*KCORE*/
 </script>
 <script>
 const FONT_DATA = /*FONTS*/;
 const FONT_LIST = [
-  ['Pattaya-Regular', 'Pattaya'],
-  ['OleoScript-Bold', 'Oleo Script Bold'],
-  ['LeckerliOne-Regular', 'Leckerli One'],
-  ['Pacifico-Regular', 'Pacifico'],
-  ['KaushanScript-Regular', 'Kaushan Script'],
-  ['Damion-Regular', 'Damion'],
-  ['LilyScriptOne-Regular', 'Lily Script One'],
-  ['Yellowtail-Regular', 'Yellowtail'],
-  ['GrandHotel-Regular', 'Grand Hotel'],
-  ['Courgette-Regular', 'Courgette'],
-  ['CaveatBrush-Regular', 'Caveat Brush'],
-  ['Knewave-Regular', 'Knewave'],
-  ['Sriracha-Regular', 'Sriracha'],
-  ['Kalam-Bold', 'Kalam Bold'],
+  ['Pattaya-Regular', 'Pattaya'], ['OleoScript-Bold', 'Oleo Script Bold'], ['LeckerliOne-Regular', 'Leckerli One'],
+  ['Pacifico-Regular', 'Pacifico'], ['KaushanScript-Regular', 'Kaushan Script'], ['Damion-Regular', 'Damion'],
+  ['LilyScriptOne-Regular', 'Lily Script One'], ['Yellowtail-Regular', 'Yellowtail'], ['GrandHotel-Regular', 'Grand Hotel'],
+  ['Courgette-Regular', 'Courgette'], ['CaveatBrush-Regular', 'Caveat Brush'], ['Knewave-Regular', 'Knewave'],
+  ['Sriracha-Regular', 'Sriracha'], ['Kalam-Bold', 'Kalam Bold'],
 ];
+const SITE_URL = 'https://keyring-maker.stuartmarkharrison.workers.dev/';
 const $ = id => document.getElementById(id);
-const els = { text: $('text'), font: $('font'), size: $('size'), tight: $('tight'), cBase: $('cBase'), cText: $('cText'),
-  count: $('count'), sizeVal: $('sizeVal'), svg: $('svg'), chips: $('chips'), msg: $('msg'), busy: $('busy'),
-  download: $('download'), downloadStl: $('downloadStl') };
-let K, fonts = {}, current = null, timer = null, downloads, downloadsChecked = false;
+const els = {};
+['text','font','size','tight','base','layer','border','loop','hole','cBase','cText','count','sizeVal','baseVal','layerVal','borderVal','holeVal','holeField',
+ 'styleRaised','styleFlush','styleHint','svg','gl','hint3d','viewTop','view3d','resetView','chips','msg','busy','download','downloadStl','shareUrl','copyLink']
+  .forEach(id => els[id] = $(id));
+let K, fonts = {}, current = null, timer = null, downloads, downloadsChecked = false, style = 'raised', view = 'top', viewer = null;
+
+// ---------- settings <-> link ----------
+const DEFAULTS = { t: 'SampleText', f: 'Pattaya-Regular', h: 9, g: 1, s: 'raised', b: 2.4, l: 0.6, w: 1.6, lp: 'left', d: 4.2, c1: '#d4a52a', c2: '#141414' };
+function readSettings() {
+  return { t: els.text.value, f: els.font.value, h: +els.size.value, g: els.tight.checked ? 1 : 0, s: style, b: +els.base.value, l: +els.layer.value,
+    w: +els.border.value, lp: els.loop.value, d: +els.hole.value, c1: els.cBase.value, c2: els.cText.value };
+}
+function applySettings(p) {
+  const v = Object.assign({}, DEFAULTS, p);
+  els.text.value = String(v.t).slice(0, 20);
+  if (fonts[v.f]) els.font.value = v.f;
+  const num = (el, x) => { const n = parseFloat(x); if (isFinite(n)) el.value = Math.min(+el.max, Math.max(+el.min, n)); };
+  num(els.size, v.h); num(els.base, v.b); num(els.layer, v.l); num(els.border, v.w); num(els.hole, v.d);
+  els.tight.checked = String(v.g) !== '0';
+  if (['left','right','top','none'].includes(v.lp)) els.loop.value = v.lp;
+  setStyle(v.s === 'flush' ? 'flush' : 'raised', true);
+  const col = x => /^#[0-9a-f]{6}$/i.test(x) ? x : null;
+  els.cBase.value = col(v.c1) || DEFAULTS.c1; els.cText.value = col(v.c2) || DEFAULTS.c2;
+}
+function shareLink() {
+  const p = new URLSearchParams(), cur = readSettings();
+  for (const k in cur) if (String(cur[k]) !== String(DEFAULTS[k]) || k === 't') p.set(k, cur[k]);
+  return SITE_URL + '?' + p.toString();
+}
+function loadFromLink() {
+  try { const q = new URLSearchParams(location.search); if (q.has('t') || q.has('f')) { const o = {}; q.forEach((v, k) => o[k] = v); return o; } } catch (e) {}
+  return null;
+}
 
 function b64ToBuf(b64) { const s = atob(b64), u = new Uint8Array(s.length); for (let i = 0; i < s.length; i++) u[i] = s.charCodeAt(i); return u.buffer; }
-const r1 = n => n.toFixed(1);
+const r1 = n => (+n).toFixed(1);
 const cleanName = t => (t.replace(/[^A-Za-z0-9 ]+/g, ' ').replace(/\s+/g, ' ').trim() || 'Keyring');
-
+const esc = s => s.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 function setMsg(t) { els.msg.textContent = t; }
 
 function init() {
@@ -191,40 +281,63 @@ function init() {
     fonts[id] = opentype.parse(b64ToBuf(FONT_DATA[id]));
     const o = document.createElement('option'); o.value = id; o.textContent = label; els.font.appendChild(o);
   }
-  try { const saved = JSON.parse(localStorage.getItem('keyring-maker-v2') || 'null');
-    if (saved) { els.text.value = saved.text ?? els.text.value; els.font.value = saved.font || 'Pattaya-Regular'; els.size.value = saved.size || 9; els.tight.checked = saved.tight !== false; els.cBase.value = saved.cBase || els.cBase.value; els.cText.value = saved.cText || els.cText.value; } } catch (e) {}
-  for (const el of [els.text, els.font, els.size, els.tight]) el.addEventListener('input', schedule);
-  for (const el of [els.cBase, els.cText]) el.addEventListener('input', () => { draw(); save(); });
-  els.size.addEventListener('input', () => { els.sizeVal.textContent = r1(+els.size.value) + ' mm'; });
+  let start = loadFromLink();
+  if (!start) { try { start = JSON.parse(localStorage.getItem('keyring-maker-v3') || 'null'); } catch (e) {} }
+  applySettings(start || {});
+  for (const id of ['text','font','size','tight','base','layer','border','loop','hole']) els[id].addEventListener('input', schedule);
+  for (const el of [els.cBase, els.cText]) el.addEventListener('input', () => { draw(); if (viewer) viewer.colours(); saveState(); });
+  els.styleRaised.addEventListener('click', () => { setStyle('raised'); schedule(); });
+  els.styleFlush.addEventListener('click', () => { setStyle('flush'); schedule(); });
+  els.viewTop.addEventListener('click', () => setView('top'));
+  els.view3d.addEventListener('click', () => setView('3d'));
+  els.resetView.addEventListener('click', () => viewer && viewer.reset());
   $('controls').addEventListener('submit', e => { e.preventDefault(); download('3mf'); });
   els.downloadStl.addEventListener('click', () => download('stl'));
+  els.copyLink.addEventListener('click', copyLink);
   setupDownloads();
   schedule(0);
 }
 
-function save() {
-  try { localStorage.setItem('keyring-maker-v2', JSON.stringify({ text: els.text.value, font: els.font.value, size: +els.size.value, tight: els.tight.checked, cBase: els.cBase.value, cText: els.cText.value })); } catch (e) {}
+function setStyle(s, quiet) {
+  style = s;
+  els.styleRaised.setAttribute('aria-pressed', s === 'raised'); els.styleFlush.setAttribute('aria-pressed', s === 'flush');
+  els.styleHint.textContent = s === 'raised' ? 'Lettering stands proud of the base.' : 'Lettering sits level with the top, inset into the base.';
 }
+function labels() {
+  els.count.textContent = els.text.value.length + ' / 20';
+  els.sizeVal.textContent = r1(els.size.value) + ' mm';
+  els.baseVal.textContent = r1(els.base.value) + ' mm';
+  els.layerVal.textContent = r1(els.layer.value) + ' mm';
+  els.borderVal.textContent = r1(els.border.value) + ' mm';
+  els.holeVal.textContent = r1(els.hole.value) + ' mm';
+  els.holeField.style.display = els.loop.value === 'none' ? 'none' : '';
+}
+function saveState() {
+  try { localStorage.setItem('keyring-maker-v3', JSON.stringify(readSettings())); } catch (e) {}
+  els.shareUrl.value = shareLink();
+}
+function setButtons(off) { els.download.disabled = off; els.downloadStl.disabled = off; }
 
 function schedule(delay = 350) {
-  els.count.textContent = els.text.value.length + ' / 20';
-  els.sizeVal.textContent = r1(+els.size.value) + ' mm';
+  labels();
   els.busy.classList.add('on'); setButtons(true);
   clearTimeout(timer);
-  timer = setTimeout(rebuild, delay);
+  timer = setTimeout(rebuild, typeof delay === 'number' ? delay : 350);
 }
 
 function rebuild() {
   const text = els.text.value;
-  save();
-  if (!text.trim()) { current = null; els.svg.innerHTML = ''; els.chips.innerHTML = ''; els.busy.classList.remove('on'); setMsg('Type some text to see your keyring.'); return; }
+  saveState();
+  if (!text.trim()) { current = null; els.svg.innerHTML = ''; els.chips.innerHTML = ''; if (viewer) viewer.clear(); els.busy.classList.remove('on'); setMsg('Type some text to see your keyring.'); return; }
   const font = fonts[els.font.value];
   const missing = [...text].filter(ch => ch !== ' ' && font.charToGlyph(ch).index === 0);
   try {
-    const d = K.design(font, text, +els.size.value, els.tight.checked);
+    const d = K.design(font, text, { cap: +els.size.value, tight: els.tight.checked, border: +els.border.value, loop: els.loop.value, hole: +els.hole.value });
     if (!d) throw new Error('empty');
-    current = { d, text, name: cleanName(text) + ' keyring', parts: null, missing: [...new Set(missing)] };
+    const m = { base: +els.base.value, layer: +els.layer.value, style };
+    current = { d, m, text, name: cleanName(text) + ' keyring', parts: K.meshes(d, m), missing: [...new Set(missing)] };
     draw(); chips();
+    if (viewer) viewer.show(current.parts);
     setButtons(false);
     setMsg(downloadHint());
   } catch (e) {
@@ -237,72 +350,144 @@ function draw() {
   if (!current) return;
   const d = current.d, pad = 6, b = d.bounds;
   const x0 = b.x0 - pad, y0 = b.y0 - pad, w = d.width + 2 * pad, h = d.height + 2 * pad;
-  const flip = b.y1 + b.y0; // mirror y around the design
+  const flip = b.y1 + b.y0;
   let grid = '';
-  const gStart = Math.floor(x0 / 10) * 10, gyStart = Math.floor(y0 / 10) * 10;
-  for (let x = gStart; x <= x0 + w; x += 10) grid += `<line x1="${x}" y1="${y0}" x2="${x}" y2="${y0 + h}"/>`;
-  for (let y = gyStart; y <= y0 + h; y += 10) grid += `<line x1="${x0}" y1="${y}" x2="${x0 + w}" y2="${y}"/>`;
+  for (let x = Math.floor(x0 / 10) * 10; x <= x0 + w; x += 10) grid += `<line x1="${x}" y1="${y0}" x2="${x}" y2="${y0 + h}"/>`;
+  for (let y = Math.floor(y0 / 10) * 10; y <= y0 + h + 4; y += 10) grid += `<line x1="${x0}" y1="${y}" x2="${x0 + w}" y2="${y}"/>`;
   const base = K.svgPath(d.body, flip), text = K.svgPath(d.inlay, flip);
-  const sx = b.x0, sy = b.y1 + 3.2; // scale bar
+  const sx = b.x0, sy = b.y1 + 3.2;
+  const raised = current.m.style === 'raised';
   els.svg.setAttribute('viewBox', `${x0} ${y0} ${w} ${h + 4}`);
   els.svg.innerHTML =
     `<g stroke="var(--plate-grid)" stroke-width="0.15">${grid}</g>` +
     `<path d="${base}" transform="translate(0.45 0.6)" fill="#000" fill-opacity="0.45" fill-rule="evenodd"/>` +
     `<path d="${base}" fill="${shade(els.cBase.value, -0.28)}" fill-rule="evenodd" transform="translate(0.2 0.3)"/>` +
     `<path d="${base}" fill="${els.cBase.value}" fill-rule="evenodd"/>` +
-    `<path d="${text}" fill="${shade(els.cText.value, 0.18)}" fill-rule="evenodd" transform="translate(0.12 0.18)"/>` +
+    (raised ? `<path d="${text}" fill="${shade(els.cText.value, 0.18)}" fill-rule="evenodd" transform="translate(0.12 0.18)"/>` : '') +
     `<path d="${text}" fill="${els.cText.value}" fill-rule="evenodd"/>` +
     `<g fill="var(--plate-ink)" stroke="var(--plate-ink)" font-family="Atkinson Hyperlegible, sans-serif" font-size="2.4">` +
     `<line x1="${sx}" y1="${sy}" x2="${sx + 10}" y2="${sy}" stroke-width="0.3"/>` +
     `<line x1="${sx}" y1="${sy - 0.8}" x2="${sx}" y2="${sy + 0.8}" stroke-width="0.3"/><line x1="${sx + 10}" y1="${sy - 0.8}" x2="${sx + 10}" y2="${sy + 0.8}" stroke-width="0.3"/>` +
     `<text x="${sx + 11.2}" y="${sy + 0.85}" stroke="none">10 mm</text></g>`;
 }
-
 function shade(hex, amt) {
-  const n = parseInt(hex.slice(1), 16); let r = n >> 16, g = (n >> 8) & 255, bl = n & 255;
-  const f = v => Math.max(0, Math.min(255, Math.round(amt < 0 ? v * (1 + amt) : v + (255 - v) * amt)));
-  return '#' + [f(r), f(g), f(bl)].map(v => v.toString(16).padStart(2, '0')).join('');
+  const n = parseInt(hex.slice(1), 16); const f = v => Math.max(0, Math.min(255, Math.round(amt < 0 ? v * (1 + amt) : v + (255 - v) * amt)));
+  return '#' + [n >> 16, (n >> 8) & 255, n & 255].map(f).map(v => v.toString(16).padStart(2, '0')).join('');
 }
-
 function chips() {
-  const d = current.d, out = [];
-  out.push(`<span class="chip"><b>${r1(d.width)} × ${r1(d.height)} × 3.0 mm</b></span>`);
+  const d = current.d, m = current.m, out = [];
+  out.push(`<span class="chip"><b>${r1(d.width)} × ${r1(d.height)} × ${r1(m.base + m.layer)} mm</b></span>`);
   out.push(d.pieces === 1 ? '<span class="chip ok">One solid piece</span>' : `<span class="chip warn">Base splits into ${d.pieces} pieces: shorten the gap between words</span>`);
   if (d.thinArea > 0) out.push(`<span class="chip warn">${d.thinArea} letter part${d.thinArea > 1 ? 's' : ''} under 0.8 mm wide: increase the letter height</span>`);
   else out.push('<span class="chip ok">All strokes 0.8 mm or wider</span>');
-  if (d.width > 100) out.push('<span class="chip warn">Over 100 mm long: may bend, reduce the letter height</span>');
+  if (d.width > 100) out.push('<span class="chip warn">Over 100 mm long: may bend, reduce the letter height or thicken the base</span>');
+  if (m.base + m.layer < 2.4) out.push('<span class="chip warn">Under 2.4 mm thick: may bend or snap</span>');
   if (current.missing.length) out.push(`<span class="chip warn">Not in this font: ${current.missing.map(esc).join(' ')}</span>`);
   els.chips.innerHTML = out.join('');
 }
-const esc = s => s.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
-function ensureParts() { if (!current.parts) current.parts = K.meshes(current.d); return current.parts; }
+// ---------- 3D view ----------
+function setView(v) {
+  view = v;
+  els.viewTop.setAttribute('aria-pressed', v === 'top'); els.view3d.setAttribute('aria-pressed', v === '3d');
+  const three = v === '3d';
+  if (three && !viewer) {
+    viewer = makeViewer(els.gl);
+    if (!viewer) { setMsg('3D view needs WebGL, which this browser has turned off. The top view still works.'); view = 'top'; els.viewTop.setAttribute('aria-pressed', true); els.view3d.setAttribute('aria-pressed', false); return; }
+  }
+  els.svg.toggleAttribute('hidden', three); els.gl.toggleAttribute('hidden', !three); els.hint3d.toggleAttribute('hidden', !three); els.resetView.toggleAttribute('hidden', !three);
+  if (three) { viewer.resize(); if (current) viewer.show(current.parts); }
+}
+function makeViewer(canvas) {
+  if (!window.THREE) return null;
+  let renderer;
+  try { renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true }); } catch (e) { return null; }
+  renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(35, 2, 0.1, 2000);
+  scene.add(new THREE.HemisphereLight(0xffffff, 0x404048, 0.75));
+  const key = new THREE.DirectionalLight(0xffffff, 0.75); key.position.set(-40, 80, 60); scene.add(key);
+  const rim = new THREE.DirectionalLight(0xffffff, 0.3); rim.position.set(60, 30, -50); scene.add(rim);
+  const group = new THREE.Group(); group.rotation.x = -Math.PI / 2; scene.add(group); // model is Z-up
+  const mats = [new THREE.MeshStandardMaterial({ roughness: 0.55, metalness: 0.05 }), new THREE.MeshStandardMaterial({ roughness: 0.6, metalness: 0.0 })];
+  let st = { theta: -0.35, phi: 0.95, dist: 120 }, fitDist = 120;
+  const reset = () => { st = { theta: -0.35, phi: 0.95, dist: fitDist }; render(); };
+  function render() {
+    camera.position.set(st.dist * Math.sin(st.phi) * Math.sin(st.theta), st.dist * Math.cos(st.phi), st.dist * Math.sin(st.phi) * Math.cos(st.theta));
+    camera.lookAt(0, 1.5, 0); renderer.render(scene, camera);
+  }
+  function resize() {
+    const w = canvas.clientWidth || 600, h = canvas.clientHeight || 340;
+    renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix(); render();
+  }
+  function colours() { mats[0].color.set(els.cBase.value); mats[1].color.set(els.cText.value); render(); }
+  function clear() { while (group.children.length) { const c = group.children.pop(); c.geometry.dispose(); } render(); }
+  function show(parts) {
+    clear(); colours();
+    let maxX = 0;
+    parts.forEach((p, i) => {
+      let geo = new THREE.BufferGeometry();
+      geo.setAttribute('position', new THREE.BufferAttribute(p.mesh.V, 3));
+      geo.setIndex(new THREE.BufferAttribute(p.mesh.F, 1));
+      geo = geo.toNonIndexed(); geo.computeVertexNormals();
+      group.add(new THREE.Mesh(geo, mats[i]));
+      for (let k = 0; k < p.mesh.V.length; k += 3) maxX = Math.max(maxX, Math.abs(p.mesh.V[k]));
+    });
+    const newFit = Math.max(40, maxX * 2.6 / Math.max(1, camera.aspect) * 1.6);
+    if (Math.abs(newFit - fitDist) > 1) { fitDist = newFit; st.dist = newFit; }
+    render();
+  }
+  // pointer orbit
+  const pts = new Map(); let pinch = 0;
+  canvas.addEventListener('pointerdown', e => { canvas.setPointerCapture(e.pointerId); pts.set(e.pointerId, [e.clientX, e.clientY]); });
+  canvas.addEventListener('pointerup', e => { pts.delete(e.pointerId); pinch = 0; });
+  canvas.addEventListener('pointercancel', e => { pts.delete(e.pointerId); pinch = 0; });
+  canvas.addEventListener('pointermove', e => {
+    if (!pts.has(e.pointerId)) return;
+    const [px, py] = pts.get(e.pointerId); pts.set(e.pointerId, [e.clientX, e.clientY]);
+    if (pts.size === 1) {
+      st.theta -= (e.clientX - px) * 0.008;
+      st.phi = Math.min(Math.PI - 0.05, Math.max(0.05, st.phi - (e.clientY - py) * 0.008));
+    } else if (pts.size === 2) {
+      const [a, b] = [...pts.values()]; const dd = Math.hypot(a[0] - b[0], a[1] - b[1]);
+      if (pinch) st.dist = Math.min(600, Math.max(15, st.dist * pinch / dd)); pinch = dd;
+    }
+    render();
+  });
+  canvas.addEventListener('wheel', e => { e.preventDefault(); st.dist = Math.min(600, Math.max(15, st.dist * (1 + Math.sign(e.deltaY) * 0.1))); render(); }, { passive: false });
+  window.addEventListener('resize', () => { if (view === '3d') resize(); });
+  return { show, clear, colours, resize, reset };
+}
 
+// ---------- share ----------
+async function copyLink() {
+  const url = shareLink(); els.shareUrl.value = url;
+  try { await navigator.clipboard.writeText(url); setMsg('Link copied. It opens this design on the keyring-maker site.'); }
+  catch (e) { els.shareUrl.focus(); els.shareUrl.select(); setMsg('Copying is blocked here. The link is selected: press Ctrl+C (or Cmd+C) to copy it.'); }
+}
+
+// ---------- downloads ----------
 function setupDownloads() {
   const done = ns => { downloads = ns; downloadsChecked = true; if (current) setMsg(downloadHint()); };
-  if (window.claude && typeof window.claude.use === 'function') {
-    window.claude.use('downloads').then(done, () => done(null));
-  } else done(null);
+  if (window.claude && typeof window.claude.use === 'function') window.claude.use('downloads').then(done, () => done(null));
+  else done(null);
 }
 function downloadHint() {
   if (!downloadsChecked) return 'Ready.';
   return downloads ? 'Each download arrives as a .zip holding the file, because Claude pages cannot save .3mf or .stl directly.' : 'Ready to download.';
 }
-
-function setButtons(off) { els.download.disabled = off; els.downloadStl.disabled = off; }
-
 function mergedStl(parts) {
+  if (current.m.style === 'flush') return K.stl(K.solid(current.d, current.m));
   let nv = 0; const V = [], F = [];
   for (const p of parts) { V.push(...p.mesh.V); for (const i of p.mesh.F) F.push(i + nv); nv += p.mesh.V.length / 3; }
   return K.stl({ V: new Float32Array(V), F: new Uint32Array(F) });
 }
-
 async function download(kind) {
   if (!current) return;
   setButtons(true); setMsg('Building the file…');
   await new Promise(r => setTimeout(r, 30));
   try {
-    const parts = ensureParts();
+    const parts = current.parts;
     const ext = kind === '3mf' ? '.3mf' : '.stl';
     const bytes = kind === '3mf' ? K.threeMF(parts, current.text) : mergedStl(parts);
     const fname = current.name + ext;
@@ -316,16 +501,10 @@ async function download(kind) {
         const c = err && err.code;
         setMsg(c === 'declined' ? 'Download cancelled.' : c === 'rate_limited' ? 'A download prompt is already open. Try again in a moment.' : 'Downloads are not available in this view. Open the page in claude.ai to download.');
       }
-    } else {
-      saveDirect(fname, bytes);
-      setMsg('Saved. ' + after);
-    }
-  } catch (e) {
-    setMsg('Could not build the file for this text. Try another font or size.');
-  }
+    } else { saveDirect(fname, bytes); setMsg('Saved. ' + after); }
+  } catch (e) { setMsg('Could not build the file for this text. Try another font or size.'); }
   setButtons(false);
 }
-
 function saveDirect(name, bytes) {
   const url = URL.createObjectURL(new Blob([bytes], { type: 'application/octet-stream' }));
   const a = document.createElement('a'); a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove();

@@ -7,7 +7,8 @@ t = t.replace('/*KCORE*/', (src / 'kcore.js').read_text()).replace('/*FONTS*/', 
 libs = {'https://cdn.jsdelivr.net/npm/opentype.js@1.3.4/dist/opentype.min.js': 'opentype.min.js',
         'https://cdn.jsdelivr.net/npm/clipper-lib@6.4.2/clipper.js': 'clipper.js',
         'https://cdn.jsdelivr.net/npm/earcut@2.2.4/dist/earcut.min.js': 'earcut.min.js',
-        'https://cdn.jsdelivr.net/npm/fflate@0.8.2/umd/index.js': 'fflate.umd.js'}
+        'https://cdn.jsdelivr.net/npm/fflate@0.8.2/umd/index.js': 'fflate.umd.js',
+        'https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js': 'three.min.js'}
 for url, f in libs.items():
     tag = f'<script src="{url}"></script>'
     assert tag in t, tag

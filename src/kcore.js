@@ -5,7 +5,7 @@
   else root.KCore = factory;
 })(this, function (ClipperLib, earcut, fflate) {
   const S = 1000; // clipper integer units per mm
-  const SPEC = { border: 1.6, close: 2.0, base: 2.4, raised: 0.6, loopR: 4.2, holeR: 2.1, loopClose: 1.0, inlayInset: 0.4, bridgeH: 3.0 };
+  const SPEC = { border: 1.6, close: 2.0, base: 2.4, raised: 0.6, loopWall: 2.1, loopR: 4.2, holeR: 2.1, loopClose: 1.0, inlayInset: 0.4, bridgeH: 3.0 };
   const CT = ClipperLib.ClipType, PT = ClipperLib.PolyType, PFT = ClipperLib.PolyFillType;
 
   // ---------- path helpers ----------
@@ -105,20 +105,27 @@
   }
 
   // ---------- 2D design ----------
-  function design(font, text, capMM, tighten) {
-    const T = layoutText(font, text, capMM, tighten);
+  function design(font, text, o) {
+    o = Object.assign({ cap: 9, tight: true, border: SPEC.border, loop: 'left', hole: SPEC.holeR * 2 }, o || {});
+    const T = layoutText(font, text, o.cap, o.tight);
     if (!T.length) return null;
     const tb = bounds(T);
-    let body = offset(T, SPEC.border);
+    let body = offset(T, o.border);
     body = offset(offset(body, SPEC.close), -SPEC.close);
     // gold bridge so separate words stay joined in one piece
     const midY = (tb.y0 + tb.y1) / 2;
     body = union(body, rect(tb.x0, midY - SPEC.bridgeH / 2, tb.x1, midY + SPEC.bridgeH / 2));
     const bb = bounds(body);
-    const cx = bb.x0 - 1.0, cy = (bb.y0 + bb.y1) / 2;
-    body = union(body, circle(cx, cy, SPEC.loopR));
-    body = offset(offset(body, SPEC.loopClose), -SPEC.loopClose);
-    body = diff(body, circle(cx, cy, SPEC.holeR));
+    const holeR = o.hole / 2, loopR = holeR + SPEC.loopWall;
+    let cx = null, cy = null;
+    if (o.loop === 'left') { cx = bb.x0 - 1.0; cy = (bb.y0 + bb.y1) / 2; }
+    else if (o.loop === 'right') { cx = bb.x1 + 1.0; cy = (bb.y0 + bb.y1) / 2; }
+    else if (o.loop === 'top') { cx = (bb.x0 + bb.x1) / 2; cy = bb.y1 + 1.0; }
+    if (cx !== null) {
+      body = union(body, circle(cx, cy, loopR));
+      body = offset(offset(body, SPEC.loopClose), -SPEC.loopClose);
+      body = diff(body, circle(cx, cy, holeR));
+    }
     const separate = p => clean(offset(offset(p, -0.01), 0.01)); // split zero-width contacts so meshes stay watertight
     body = separate(clean(body));
     const inlay = separate(clean(inter(T, offset(body, -SPEC.inlayInset))));
@@ -131,57 +138,105 @@
       if (!offset(piece, -0.4).length) thin++;
       for (const h of ch.Childs()) visit(h); } } };
     visit(tree);
-    return { body, inlay, bounds: b, width: b.x1 - b.x0, height: b.y1 - b.y0, pieces: outerCount(body), thinArea: thin, loop: { cx, cy } };
+    return { body, inlay, bounds: b, width: b.x1 - b.x0, height: b.y1 - b.y0, pieces: outerCount(body), thinArea: thin, loop: cx === null ? null : { cx, cy }, opts: o };
   }
 
-  // ---------- meshing ----------
   function polyTreeOf(paths) {
     const c = new ClipperLib.Clipper(); const pt = new ClipperLib.PolyTree();
     c.AddPaths(paths, PT.ptSubject, true); c.Execute(CT.ctUnion, pt, PFT.pftNonZero, PFT.pftNonZero); return pt;
   }
-  function signedArea(r) { let a = 0; for (let i = 0, j = r.length - 1; i < r.length; j = i++) a += (r[j][0] * r[i][1] - r[i][0] * r[j][1]); return a / 2; }
-  function extrude(paths, z0, z1, off) {
-    const V = [], F = [];
-    const pt = polyTreeOf(paths);
-    const addShape = (outer, holes) => {
-      const rings = [outer, ...holes].map(c => c.map(q => [q.X / S - off[0], q.Y / S - off[1]]));
-      if (signedArea(rings[0]) < 0) rings[0].reverse();
-      for (let h = 1; h < rings.length; h++) if (signedArea(rings[h]) > 0) rings[h].reverse();
-      const flat = [], holeIdx = []; const base = V.length / 3; const n = rings.reduce((s, r) => s + r.length, 0);
-      for (const z of [z0, z1]) for (const r of rings) for (const [x, y] of r) V.push(x, y, z);
-      let k = 0;
-      rings.forEach((r, ri) => { if (ri > 0) holeIdx.push(k); for (const p of r) { flat.push(p[0], p[1]); k++; } });
-      const tri = earcut(flat, holeIdx, 2);
-      for (let t = 0; t < tri.length; t += 3) {
-        let [a, b, c] = [tri[t], tri[t + 1], tri[t + 2]];
-        const cr = (flat[2*b]-flat[2*a])*(flat[2*c+1]-flat[2*a+1]) - (flat[2*b+1]-flat[2*a+1])*(flat[2*c]-flat[2*a]);
-        if (cr < 0) [b, c] = [c, b];
-        F.push(base + n + a, base + n + b, base + n + c); // top, normal +z
-        F.push(base + a, base + c, base + b);             // bottom, normal -z
-      }
-      let s = 0;
-      for (const r of rings) {
-        for (let i = 0; i < r.length; i++) {
-          const a = base + s + i, b = base + s + (i + 1) % r.length;
-          F.push(a, b, b + n); F.push(a, b + n, a + n);
-        }
-        s += r.length;
-      }
-    };
-    const walk = node => {
-      for (const ch of node.Childs()) {
-        if (!ch.IsHole()) { addShape(ch.Contour(), ch.Childs().map(h => h.Contour())); for (const h of ch.Childs()) walk(h); }
-      }
-    };
-    walk(pt);
-    return { V: new Float32Array(V), F: new Uint32Array(F) };
+
+  // ---------- meshing ----------
+  // Rings stay in clipper integer units so shared edges match exactly; vertices are de-duplicated by position.
+  function pointInRing(x, y, r) {
+    let inside = false;
+    for (let i = 0, j = r.length - 1; i < r.length; j = i++) {
+      const xi = r[i].X, yi = r[i].Y, xj = r[j].X, yj = r[j].Y;
+      if ((yi > y) !== (yj > y) && x < (xj - xi) * (y - yi) / (yj - yi) + xi) inside = !inside;
+    }
+    return inside;
   }
-  function meshes(d) {
+  const ringArea = r => { let a = 0; for (let i = 0, j = r.length - 1; i < r.length; j = i++) a += r[j].X * r[i].Y - r[i].X * r[j].Y; return a / 2; };
+  // Group a set of non-crossing rings into filled regions by nesting depth (even depth = solid, odd = hole).
+  function groups(rings) {
+    const rs = rings.map(r => ({ r, depth: 0, parent: -1, area: Math.abs(ringArea(r)) }));
+    rs.forEach((a, i) => {
+      // test a point just inside the edge midpoint is unreliable; use a vertex (rings never share vertices here)
+      const p = a.r[0];
+      let best = -1;
+      rs.forEach((b, j) => { if (i !== j && b.area > a.area && pointInRing(p.X + 0.5, p.Y + 0.25, b.r)) { a.depth++; if (best < 0 || b.area < rs[best].area) best = j; } });
+      a.parent = best;
+    });
+    const out = [];
+    rs.forEach((a, i) => { if (a.depth % 2 === 0) out.push({ outer: a.r, holes: rs.filter(h => h.parent === i && h.depth % 2 === 1).map(h => h.r) }); });
+    for (const g of out) {
+      if (ringArea(g.outer) < 0) g.outer = g.outer.slice().reverse();
+      g.holes = g.holes.map(h => ringArea(h) > 0 ? h.slice().reverse() : h);
+    }
+    return out;
+  }
+  function MeshBuilder(off) {
+    const V = [], F = [], map = new Map();
+    const vid = (q, z) => {
+      const key = q.X + ',' + q.Y + ',' + Math.round(z * 1e5);
+      let i = map.get(key);
+      if (i === undefined) { i = V.length / 3; V.push(q.X / S - off[0], q.Y / S - off[1], z); map.set(key, i); }
+      return i;
+    };
+    return {
+      cap(rings, z, up) { // rings: any set of nested rings; fills by depth parity
+        for (const g of groups(rings)) {
+          const all = [g.outer, ...g.holes], flat = [], holeIdx = [], ids = [];
+          for (const r of all) { if (r !== g.outer) holeIdx.push(ids.length); for (const q of r) { flat.push(q.X, q.Y); ids.push(vid(q, z)); } }
+          const tri = earcut(flat, holeIdx, 2);
+          for (let t = 0; t < tri.length; t += 3) {
+            let [a, b, c] = [tri[t], tri[t + 1], tri[t + 2]];
+            const cr = (flat[2*b]-flat[2*a])*(flat[2*c+1]-flat[2*a+1]) - (flat[2*b+1]-flat[2*a+1])*(flat[2*c]-flat[2*a]);
+            if ((cr < 0) === up) [b, c] = [c, b];
+            F.push(ids[a], ids[b], ids[c]);
+          }
+        }
+      },
+      walls(rings, z0, z1, inward) { // outward-facing side walls of the solid region, or facing into a pocket
+        for (const g of groups(rings)) for (const r of [g.outer, ...g.holes]) {
+          for (let i = 0; i < r.length; i++) {
+            const p = r[i], q = r[(i + 1) % r.length];
+            const a0 = vid(p, z0), b0 = vid(q, z0), a1 = vid(p, z1), b1 = vid(q, z1);
+            if (!inward) { F.push(a0, b0, b1); F.push(a0, b1, a1); } else { F.push(a0, b1, b0); F.push(a0, a1, b1); }
+          }
+        }
+      },
+      done() { return { V: new Float32Array(V), F: new Uint32Array(F) }; },
+    };
+  }
+  // style 'raised': lettering stands on top of the base. 'flush': lettering sits in a pocket, top surface level.
+  function meshes(d, o) {
+    o = Object.assign({ base: SPEC.base, layer: SPEC.raised, style: 'raised' }, o || {});
     const off = [(d.bounds.x0 + d.bounds.x1) / 2, (d.bounds.y0 + d.bounds.y1) / 2];
+    const g = MeshBuilder(off), t = MeshBuilder(off);
+    const top = o.base + o.layer;
+    if (o.style === 'flush') {
+      const floor = top - o.layer, pocket = Math.max(0.2, floor);
+      g.cap(d.body, 0, false); g.walls(d.body, 0, top, false);
+      g.cap(d.body.concat(d.inlay), top, true);          // top surface with lettering-shaped openings
+      g.walls(d.inlay, pocket, top, true); g.cap(d.inlay, pocket, true); // pocket sides and floor
+      t.cap(d.inlay, pocket, false); t.walls(d.inlay, pocket, top, false); t.cap(d.inlay, top, true);
+    } else {
+      g.cap(d.body, 0, false); g.walls(d.body, 0, o.base, false); g.cap(d.body, o.base, true);
+      t.cap(d.inlay, o.base, false); t.walls(d.inlay, o.base, top, false); t.cap(d.inlay, top, true);
+    }
     return [
-      { name: 'Base', mesh: extrude(d.body, 0, SPEC.base, off), slot: 1 },
-      { name: 'Lettering', mesh: extrude(d.inlay, SPEC.base, SPEC.base + SPEC.raised, off), slot: 2 },
+      { name: 'Base', mesh: g.done(), slot: 1 },
+      { name: 'Lettering', mesh: t.done(), slot: 2 },
     ];
+  }
+
+  // One solid block (base and lettering together) for single-colour .stl output in flush style
+  function solid(d, o) {
+    o = Object.assign({ base: SPEC.base, layer: SPEC.raised }, o || {});
+    const off = [(d.bounds.x0 + d.bounds.x1) / 2, (d.bounds.y0 + d.bounds.y1) / 2], m = MeshBuilder(off), top = o.base + o.layer;
+    m.cap(d.body, 0, false); m.walls(d.body, 0, top, false); m.cap(d.body, top, true);
+    return m.done();
   }
 
   // ---------- file writers ----------
@@ -223,5 +278,5 @@
     return paths.map(p => 'M' + p.map(q => (q.X / S).toFixed(3) + ' ' + (flipY - q.Y / S).toFixed(3)).join('L') + 'Z').join('');
   }
 
-  return { SPEC, design, meshes, stl, threeMF, svgPath };
+  return { SPEC, design, meshes, solid, stl, threeMF, svgPath };
 });
