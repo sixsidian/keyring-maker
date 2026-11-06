@@ -1,0 +1,8 @@
+{
+	// Static site: Cloudflare serves the files in ./site, no Worker script needed
+	"name": "keyring-maker",
+	"compatibility_date": "2026-11-06",
+	"assets": {
+		"directory": "./site"
+	}
+}
