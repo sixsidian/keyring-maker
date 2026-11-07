@@ -130,8 +130,8 @@ html.shop button.primary:hover:not(:disabled) { background: #17635F; }
 .order-note { margin: 0; font-family: "Gochi Hand", cursive; font-size: 1.15rem; color: var(--muted); }
 .msg.err { color: var(--warn); font-weight: 600; }
 .msg.done { color: var(--ok); font-weight: 600; }
-html.plate #text { text-transform: uppercase; }
-html.plate #fontField, html.plate #tightField, html.plate #nameColours, html.plate #nameSwatches { display: none !important; }
+html.kind-plate #text { text-transform: uppercase; }
+html.kind-plate #fontField, html.kind-plate #tightField, html.kind-plate #nameColours, html.kind-plate #nameSwatches { display: none !important; }
 @media (max-width: 820px) { html.shop .stage { order: -1; } html.shop .plate canvas { height: 260px; } }
 </style>
 </head>
@@ -8343,7 +8343,7 @@ function setKind(k, quiet) {
   if (k === 'name' && kind === 'plate' && nameCols) { els.cBase.value = nameCols[0]; els.cText.value = nameCols[1]; if (SHOP) shopDots(); }
   kind = k;
   els.kindName.setAttribute('aria-pressed', k === 'name'); els.kindPlate.setAttribute('aria-pressed', k === 'plate');
-  document.documentElement.classList.toggle('plate', k === 'plate');
+  document.documentElement.classList.toggle('kind-plate', k === 'plate');
   els.plateField.hidden = k !== 'plate';
   els.text.maxLength = k === 'plate' ? 12 : 20;
   if (els.text.value.length > els.text.maxLength) els.text.value = els.text.value.slice(0, els.text.maxLength);
