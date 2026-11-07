@@ -146,7 +146,7 @@ html.kind-plate #fontField, html.kind-plate #tightField, html.kind-plate #nameCo
       <div class="field">
         <span class="label">Keyring style</span>
         <div class="seg full" style="--n:2" role="group" aria-label="Keyring style">
-          <button type="button" id="kindName" aria-pressed="true">Name keyring</button>
+          <button type="button" id="kindName" aria-pressed="true">Keyring</button>
           <button type="button" id="kindPlate" aria-pressed="false">Number plate</button>
         </div>
       </div>
@@ -655,7 +655,7 @@ function addToBasket() {
   const d = current.d, m = current.m;
   const loopNames = { left: 'Left end', right: 'Right end', top: 'Top, centred', none: 'No loop' };
   const props = {
-    'Style': kind === 'plate' ? 'Number plate' : 'Name keyring',
+    'Style': kind === 'plate' ? 'Number plate' : 'Keyring',
     'Text': current.text,
     'Font': kind === 'plate' ? 'Number plate (Barlow Condensed)' : els.font.options[els.font.selectedIndex].textContent,
     'Letter height': r1(els.size.value) + ' mm',
