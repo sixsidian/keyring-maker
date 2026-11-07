@@ -3,10 +3,15 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<script>
+const SHOP = /*SHOP*/false;
+if (SHOP) { document.documentElement.classList.add('shop'); document.documentElement.setAttribute('data-theme', 'light'); }
+</script>
 <title>Name Keyring Maker</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet">
+<script>if (SHOP) document.write('<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700&family=Gochi+Hand&family=Work+Sans:wght@400;600&display=swap" rel="stylesheet">');</script>
 <style>
 :root {
   /* Layout: controls column beside a build-plate preview that shows the keyring at true proportions on a 10mm grid. */
@@ -104,11 +109,33 @@ button.primary.alt { background: transparent; color: var(--ink); border: 2px sol
 .share-row { display: flex; gap: 8px; }
 .share-row input { flex: 1; min-width: 0; font: inherit; font-size: 0.85rem; color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; }
 @media (prefers-reduced-motion: reduce) { .busy { transition: none; } }
+/* Shop mode: embedded in The Custom 3D Print Shop, styled as the Maker's Notebook */
+html:not(.shop) .shop-only, html.shop .tool-only { display: none !important; }
+html.shop {
+  --bg: #F3E6CC; --panel: #ffffff; --ink: #2B2118; --muted: #5A4A3A; --line: #D9C39C;
+  --accent: #1F7F7B; --accent-ink: #ffffff; --plate: #ffffff; --plate-grid: #DCE6F2; --plate-ink: #5A4A3A;
+  --ok: #17635F; --ok-bg: #DDEFEC; --warn: #8A2A40; --warn-bg: #F8E1E6;
+  --font-display: "Fredoka", system-ui, sans-serif; --font-body: "Work Sans", system-ui, sans-serif;
+}
+html.shop body { background: transparent; }
+html.shop .wrap { padding: 4px 4px 12px; }
+html.shop .panel { border: 0; border-radius: 4px; box-shadow: 0 3px 0 var(--line); }
+html.shop .plate { border: 2px solid var(--ink); border-radius: 6px; background-image: linear-gradient(#EEF3F9 1px, transparent 1px), linear-gradient(90deg, #EEF3F9 1px, transparent 1px); background-size: 16px 16px; }
+html.shop input[type="text"], html.shop select { background: #fff; border: 2px solid var(--ink); }
+html.shop .field > label, html.shop .label { font-family: var(--font-display); font-weight: 600; }
+html.shop button.primary { font-family: var(--font-display); font-size: 1.1rem; border-radius: 8px; min-height: 52px; }
+html.shop button.primary:hover:not(:disabled) { background: #17635F; }
+.colour-pick { display: flex; align-items: center; gap: 10px; }
+.colour-dot { width: 28px; height: 28px; border-radius: 50%; border: 2px solid var(--ink); flex: none; }
+.order-note { margin: 0; font-family: "Gochi Hand", cursive; font-size: 1.15rem; color: var(--muted); }
+.msg.err { color: var(--warn); font-weight: 600; }
+.msg.done { color: var(--ok); font-weight: 600; }
+@media (max-width: 820px) { html.shop .stage { order: -1; } html.shop .plate canvas { height: 260px; } }
 </style>
 </head>
 <body>
 <div class="wrap">
-  <header>
+  <header class="tool-only">
     <h1>Name Keyring Maker</h1>
     <p>Type a name or message, pick a font, size and finish, then download two-colour print files: lettering on a solid base with a key loop.</p>
   </header>
@@ -125,12 +152,12 @@ button.primary.alt { background: transparent; color: var(--ink); border: 2px sol
       <div class="field">
         <label for="size">Letter height <span class="hint" id="sizeVal"></span></label>
         <input type="range" id="size" min="5" max="14" step="0.5" value="9">
-        <span class="hint">Height of a capital letter. 9 mm matches the #Justice4Luce keyring.</span>
+        <span class="hint">Height of a capital letter.<span class="tool-only"> 9 mm matches the #Justice4Luce keyring.</span></span>
       </div>
       <label class="check" for="tight"><input type="checkbox" id="tight" checked>
         <span>Close up wide letter gaps<br><span class="hint">Pulls widely spaced letters closer together, such as after a #. Spaces between words are kept.</span></span></label>
 
-      <div class="section-title">Build</div>
+      <div class="section-title"><span class="tool-only">Build</span><span class="shop-only">Style</span></div>
       <div class="field">
         <span class="label">Lettering</span>
         <div class="seg full" style="--n:2" role="group" aria-label="Lettering style">
@@ -139,7 +166,7 @@ button.primary.alt { background: transparent; color: var(--ink); border: 2px sol
         </div>
         <span class="hint" id="styleHint"></span>
       </div>
-      <div class="pair">
+      <div class="pair tool-only">
         <div class="field">
           <label for="base">Base <span class="hint" id="baseVal"></span></label>
           <input type="range" id="base" min="1.2" max="4" step="0.2" value="2.4">
@@ -149,7 +176,7 @@ button.primary.alt { background: transparent; color: var(--ink); border: 2px sol
           <input type="range" id="layer" min="0.4" max="1.6" step="0.2" value="0.6">
         </div>
       </div>
-      <div class="field">
+      <div class="field tool-only">
         <label for="border">Border width <span class="hint" id="borderVal"></span></label>
         <input type="range" id="border" min="1" max="3" step="0.2" value="1.6">
       </div>
@@ -162,23 +189,37 @@ button.primary.alt { background: transparent; color: var(--ink); border: 2px sol
           <option value="none">No loop</option>
         </select>
       </div>
-      <div class="field" id="holeField">
+      <div class="field tool-only" id="holeField">
         <label for="hole">Hole size <span class="hint" id="holeVal"></span></label>
         <input type="range" id="hole" min="3" max="6" step="0.2" value="4.2">
         <span class="hint">The loop wall stays 2.1 mm thick round the hole.</span>
       </div>
 
       <div class="section-title">Colours</div>
-      <div class="swatches">
+      <div class="pair shop-only">
+        <div class="field">
+          <label for="pBase">Base colour</label>
+          <div class="colour-pick"><span class="colour-dot" id="dotBase"></span><select id="pBase"></select></div>
+        </div>
+        <div class="field">
+          <label for="pText">Lettering colour</label>
+          <div class="colour-pick"><span class="colour-dot" id="dotText"></span><select id="pText"></select></div>
+        </div>
+      </div>
+      <div class="swatches tool-only">
         <label class="swatch" for="cBase"><input type="color" id="cBase" value="#d4a52a"><span>Base<small>Filament 1</small></span></label>
         <label class="swatch" for="cText"><input type="color" id="cText" value="#141414"><span>Lettering<small>Filament 2</small></span></label>
       </div>
 
-      <div class="dl-row">
+      <div class="shop-only">
+        <p class="order-note">printed to order in your colours</p>
+        <button type="button" class="primary" id="addToBasket" disabled>Add to basket</button>
+      </div>
+      <div class="dl-row tool-only">
         <button type="submit" class="primary" id="download" disabled>Download .3mf<small>Two colours, filament slots set</small></button>
         <button type="button" class="primary alt" id="downloadStl" disabled>Download .stl<small>One piece, no colour data</small></button>
       </div>
-      <div class="share">
+      <div class="share tool-only">
         <span class="label">Share this design</span>
         <div class="share-row">
           <input type="text" id="shareUrl" readonly aria-label="Link to this design">
@@ -202,7 +243,7 @@ button.primary.alt { background: transparent; color: var(--ink); border: 2px sol
         <span class="hint3d" id="hint3d" hidden>Drag to rotate, scroll or pinch to zoom</span>
       </div>
       <div class="chips" id="chips"></div>
-      <div class="spec">
+      <div class="spec tool-only">
         <dl>
           <dt>.3mf</dt><dd>Base and lettering as two parts of one object, base on filament 1, lettering on filament 2</dd>
           <dt>.stl</dt><dd>Base and lettering merged into one file with no colour data, for single-colour prints or other slicers</dd>
@@ -8160,15 +8201,17 @@ const FONT_LIST = [
   ['Sriracha-Regular', 'Sriracha'], ['Kalam-Bold', 'Kalam Bold'],
 ];
 const SITE_URL = 'https://keyring-maker.stuartmarkharrison.workers.dev/';
+const STORE_KEY = SHOP ? 'keyring-shop-v1' : 'keyring-maker-v3';
 const $ = id => document.getElementById(id);
 const els = {};
 ['text','font','size','tight','base','layer','border','loop','hole','cBase','cText','count','sizeVal','baseVal','layerVal','borderVal','holeVal','holeField',
- 'styleRaised','styleFlush','styleHint','svg','gl','hint3d','viewTop','view3d','resetView','chips','msg','busy','download','downloadStl','shareUrl','copyLink']
+ 'styleRaised','styleFlush','styleHint','svg','gl','hint3d','viewTop','view3d','resetView','chips','msg','busy','download','downloadStl','shareUrl','copyLink',
+ 'pBase','pText','dotBase','dotText','addToBasket']
   .forEach(id => els[id] = $(id));
 let K, fonts = {}, current = null, timer = null, downloads, downloadsChecked = false, style = 'raised', view = 'top', viewer = null;
 
 // ---------- settings <-> link ----------
-const DEFAULTS = { t: 'SampleText', f: 'Pattaya-Regular', h: 9, g: 1, s: 'raised', b: 2.4, l: 0.6, w: 1.6, lp: 'left', d: 4.2, c1: '#d4a52a', c2: '#141414' };
+const DEFAULTS = { t: SHOP ? 'Your name' : 'SampleText', f: 'Pattaya-Regular', h: 9, g: 1, s: 'raised', b: 2.4, l: 0.6, w: 1.6, lp: 'left', d: 4.2, c1: '#d4a52a', c2: '#141414' };
 function readSettings() {
   return { t: els.text.value, f: els.font.value, h: +els.size.value, g: els.tight.checked ? 1 : 0, s: style, b: +els.base.value, l: +els.layer.value,
     w: +els.border.value, lp: els.loop.value, d: +els.hole.value, c1: els.cBase.value, c2: els.cText.value };
@@ -8179,15 +8222,17 @@ function applySettings(p) {
   if (fonts[v.f]) els.font.value = v.f;
   const num = (el, x) => { const n = parseFloat(x); if (isFinite(n)) el.value = Math.min(+el.max, Math.max(+el.min, n)); };
   num(els.size, v.h); num(els.base, v.b); num(els.layer, v.l); num(els.border, v.w); num(els.hole, v.d);
+  if (SHOP) { els.base.value = DEFAULTS.b; els.layer.value = DEFAULTS.l; els.border.value = DEFAULTS.w; els.hole.value = DEFAULTS.d; }
   els.tight.checked = String(v.g) !== '0';
   if (['left','right','top','none'].includes(v.lp)) els.loop.value = v.lp;
   setStyle(v.s === 'flush' ? 'flush' : 'raised', true);
   const col = x => /^#[0-9a-f]{6}$/i.test(x) ? x : null;
   els.cBase.value = col(v.c1) || DEFAULTS.c1; els.cText.value = col(v.c2) || DEFAULTS.c2;
+  if (SHOP) shopColours(v.c1, v.c2);
 }
 function shareLink() {
   const p = new URLSearchParams(), cur = readSettings();
-  for (const k in cur) if (String(cur[k]) !== String(DEFAULTS[k]) || k === 't') p.set(k, cur[k]);
+  for (const k in cur) if (SHOP || String(cur[k]) !== String(DEFAULTS[k]) || k === 't') p.set(k, cur[k]);
   return SITE_URL + '?' + p.toString();
 }
 function loadFromLink() {
@@ -8199,19 +8244,20 @@ function b64ToBuf(b64) { const s = atob(b64), u = new Uint8Array(s.length); for 
 const r1 = n => (+n).toFixed(1);
 const cleanName = t => (t.replace(/[^A-Za-z0-9 ]+/g, ' ').replace(/\s+/g, ' ').trim() || 'Keyring');
 const esc = s => s.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-function setMsg(t) { els.msg.textContent = t; }
+function setMsg(t, kind) { els.msg.textContent = t; els.msg.className = 'msg' + (kind ? ' ' + kind : ''); }
 
 function init() {
   if (!window.opentype || !window.ClipperLib || !window.earcut || !window.fflate) {
     setMsg('The page could not load its drawing libraries. Check your connection and reload.'); return;
   }
   K = window.KCore(window.ClipperLib, window.earcut, window.fflate);
+  if (SHOP) setupShop();
   for (const [id, label] of FONT_LIST) {
     fonts[id] = opentype.parse(b64ToBuf(FONT_DATA[id]));
     const o = document.createElement('option'); o.value = id; o.textContent = label; els.font.appendChild(o);
   }
   let start = loadFromLink();
-  if (!start) { try { start = JSON.parse(localStorage.getItem('keyring-maker-v3') || 'null'); } catch (e) {} }
+  if (!start) { try { start = JSON.parse(localStorage.getItem(STORE_KEY) || 'null'); } catch (e) {} }
   applySettings(start || {});
   for (const id of ['text','font','size','tight','base','layer','border','loop','hole']) els[id].addEventListener('input', schedule);
   for (const el of [els.cBase, els.cText]) el.addEventListener('input', () => { draw(); if (viewer) viewer.colours(); saveState(); });
@@ -8242,10 +8288,10 @@ function labels() {
   els.holeField.style.display = els.loop.value === 'none' ? 'none' : '';
 }
 function saveState() {
-  try { localStorage.setItem('keyring-maker-v3', JSON.stringify(readSettings())); } catch (e) {}
+  try { localStorage.setItem(STORE_KEY, JSON.stringify(readSettings())); } catch (e) {}
   els.shareUrl.value = shareLink();
 }
-function setButtons(off) { els.download.disabled = off; els.downloadStl.disabled = off; }
+function setButtons(off) { els.download.disabled = off; els.downloadStl.disabled = off; if (SHOP) els.addToBasket.disabled = off || !orderable(); }
 
 function schedule(delay = 350) {
   labels();
@@ -8268,7 +8314,7 @@ function rebuild() {
     draw(); chips();
     if (viewer) viewer.show(current.parts);
     setButtons(false);
-    setMsg(downloadHint());
+    setMsg(SHOP ? shopHint() : downloadHint());
   } catch (e) {
     current = null; setMsg('That text could not be turned into a keyring. Try different characters or another font.');
   }
@@ -8397,6 +8443,7 @@ async function copyLink() {
 
 // ---------- downloads ----------
 function setupDownloads() {
+  if (SHOP) return;
   const done = ns => { downloads = ns; downloadsChecked = true; if (current) setMsg(downloadHint()); };
   if (window.claude && typeof window.claude.use === 'function') window.claude.use('downloads').then(done, () => done(null));
   else done(null);
@@ -8438,6 +8485,72 @@ function saveDirect(name, bytes) {
   const url = URL.createObjectURL(new Blob([bytes], { type: 'application/octet-stream' }));
   const a = document.createElement('a'); a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 4000);
+}
+
+// ---------- shop mode ----------
+// The shop page passes its colour list and its own address in the link; "Add to basket" hands the design to that page, which adds it to the Shopify cart.
+let palette = [], parentOrigin = null, pending = false;
+function setupShop() {
+  const q = new URLSearchParams(location.search);
+  palette = (q.get('colours') || '').split(';').map(s => {
+    const i = s.lastIndexOf(':'); const name = s.slice(0, i).trim(), hex = '#' + s.slice(i + 1).trim().replace(/^#/, '').toLowerCase();
+    return name && /^#[0-9a-f]{6}$/.test(hex) ? { name, hex } : null;
+  }).filter(Boolean);
+  if (!palette.length) palette = [{ name: 'Black', hex: '#141414' }, { name: 'White', hex: '#f2f2f2' }];
+  if (palette.length < 2) palette.push(palette[0]);
+  for (const sel of [els.pBase, els.pText]) palette.forEach((c, i) => { const o = document.createElement('option'); o.value = i; o.textContent = c.name; sel.appendChild(o); });
+  DEFAULTS.c1 = palette[0].hex; DEFAULTS.c2 = palette[1].hex;
+  const pickChange = () => {
+    els.cBase.value = palette[+els.pBase.value].hex; els.cText.value = palette[+els.pText.value].hex;
+    shopDots(); draw(); if (viewer) viewer.colours(); saveState(); setButtons(!current); if (current) setMsg(shopHint());
+  };
+  els.pBase.addEventListener('change', pickChange); els.pText.addEventListener('change', pickChange);
+  try { const o = q.get('origin'); if (o && (/^https:\/\/[a-z0-9.-]+(:\d+)?$/i.test(o) || /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(o))) parentOrigin = o; } catch (e) {}
+  els.addToBasket.addEventListener('click', addToBasket);
+  window.addEventListener('message', e => {
+    if (!parentOrigin || e.origin !== parentOrigin || !e.data || typeof e.data !== 'object') return;
+    if (e.data.type === 'keyring:added') { pending = false; setButtons(!current); setMsg('Added to your basket.', 'done'); }
+    if (e.data.type === 'keyring:error') { pending = false; setButtons(!current); setMsg(String(e.data.message || 'Could not add it to the basket. Please try again.'), 'err'); }
+  });
+  if (window.ResizeObserver && parentOrigin) {
+    let last = 0;
+    new ResizeObserver(() => { const h = Math.ceil(document.documentElement.scrollHeight); if (h !== last) { last = h; parent.postMessage({ type: 'keyring:height', height: h }, parentOrigin); } }).observe(document.body);
+  }
+}
+function shopColours(c1, c2) {
+  const find = (hex, fb) => { const i = palette.findIndex(c => c.hex === String(hex || '').toLowerCase()); return i >= 0 ? i : fb; };
+  els.pBase.value = find(c1, 0); els.pText.value = find(c2, 1);
+  els.cBase.value = palette[+els.pBase.value].hex; els.cText.value = palette[+els.pText.value].hex;
+  shopDots();
+}
+function shopDots() { els.dotBase.style.background = els.cBase.value; els.dotText.style.background = els.cText.value; }
+function orderable() { return !!current && current.d.pieces === 1 && !current.missing.length && !pending; }
+function shopHint() {
+  if (!current) return '';
+  if (current.d.pieces !== 1) return 'The base splits into separate pieces. Shorten the gap between words to order this.';
+  if (current.missing.length) return 'Some characters are not in this font. Remove them or pick another font to order this.';
+  if (els.pBase.value === els.pText.value) return 'Tip: the base and lettering are the same colour, so the text will not stand out.';
+  return 'Looks good. Add it to your basket when you are happy.';
+}
+function addToBasket() {
+  if (!orderable()) return;
+  if (!parentOrigin || parent === window) { setMsg('Open the Keyring Maker from the shop to order.', 'err'); return; }
+  const d = current.d, m = current.m;
+  const loopNames = { left: 'Left end', right: 'Right end', top: 'Top, centred', none: 'No loop' };
+  const props = {
+    'Text': current.text,
+    'Font': els.font.options[els.font.selectedIndex].textContent,
+    'Letter height': r1(els.size.value) + ' mm',
+    'Lettering': style === 'raised' ? 'Raised' : 'Flush',
+    'Key loop': loopNames[els.loop.value],
+    'Base colour': palette[+els.pBase.value].name,
+    'Lettering colour': palette[+els.pText.value].name,
+    'Size': r1(d.width) + ' x ' + r1(d.height) + ' x ' + r1(m.base + m.layer) + ' mm',
+    '_Design link': shareLink()
+  };
+  pending = true; setButtons(true); setMsg('Adding to your basket…');
+  parent.postMessage({ type: 'keyring:add', properties: props }, parentOrigin);
+  setTimeout(() => { if (pending) { pending = false; setButtons(!current); setMsg('The shop did not respond. Please try again.', 'err'); } }, 15000);
 }
 
 init();
