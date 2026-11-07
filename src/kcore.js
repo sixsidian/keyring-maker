@@ -141,6 +141,43 @@
     return { body, inlay, bounds: b, width: b.x1 - b.x0, height: b.y1 - b.y0, pieces: outerCount(body), thinArea: thin, loop: cx === null ? null : { cx, cy }, opts: o };
   }
 
+  // UK number-plate style: a rounded rectangle plate, with a border ring and the text in the second colour.
+  function plate(font, text, o) {
+    o = Object.assign({ cap: 9, loop: 'left', hole: SPEC.holeR * 2, ring: 1.2 }, o || {});
+    const T = layoutText(font, text, o.cap, false);
+    if (!T.length) return null;
+    const tb = bounds(T), c = o.cap;
+    const padX = 0.45 * c, padY = 0.32 * c, edge = SPEC.inlayInset + 0.8; // plate edge to border ring
+    const x0 = tb.x0 - padX - o.ring - edge, x1 = tb.x1 + padX + o.ring + edge;
+    const y0 = tb.y0 - padY - o.ring - edge, y1 = tb.y1 + padY + o.ring + edge;
+    const r = Math.min(2.5, (y1 - y0) / 4);
+    const roundRect = (a, b, cc, d, rr) => offset(rect(a + rr, b + rr, cc - rr, d - rr), rr);
+    let body = roundRect(x0, y0, x1, y1, r);
+    const holeR = o.hole / 2, loopR = holeR + SPEC.loopWall;
+    let cx = null, cy = null;
+    if (o.loop === 'left') { cx = x0 - 1.0; cy = (y0 + y1) / 2; }
+    else if (o.loop === 'right') { cx = x1 + 1.0; cy = (y0 + y1) / 2; }
+    else if (o.loop === 'top') { cx = (x0 + x1) / 2; cy = y1 + 1.0; }
+    if (cx !== null) {
+      body = union(body, circle(cx, cy, loopR));
+      body = offset(offset(body, SPEC.loopClose), -SPEC.loopClose);
+      body = diff(body, circle(cx, cy, holeR));
+    }
+    const separate = p => clean(offset(offset(p, -0.01), 0.01));
+    body = separate(clean(body));
+    const ringOuter = roundRect(x0 + edge, y0 + edge, x1 - edge, y1 - edge, Math.max(0.5, r - edge));
+    const ringInner = offset(ringOuter, -o.ring);
+    const inlay = separate(clean(union(diff(ringOuter, ringInner), T)));
+    const b = bounds(body);
+    let thin = 0; const tree = polyTreeOf(T);
+    const visit = node => { for (const ch of node.Childs()) { if (!ch.IsHole()) {
+      const piece = [ch.Contour(), ...ch.Childs().map(h => h.Contour())];
+      if (!offset(piece, -0.4).length) thin++;
+      for (const h of ch.Childs()) visit(h); } } };
+    visit(tree);
+    return { body, inlay, bounds: b, width: b.x1 - b.x0, height: b.y1 - b.y0, pieces: outerCount(body), thinArea: thin, loop: cx === null ? null : { cx, cy }, opts: o };
+  }
+
   function polyTreeOf(paths) {
     const c = new ClipperLib.Clipper(); const pt = new ClipperLib.PolyTree();
     c.AddPaths(paths, PT.ptSubject, true); c.Execute(CT.ctUnion, pt, PFT.pftNonZero, PFT.pftNonZero); return pt;
@@ -278,5 +315,5 @@
     return paths.map(p => 'M' + p.map(q => (q.X / S).toFixed(3) + ' ' + (flipY - q.Y / S).toFixed(3)).join('L') + 'Z').join('');
   }
 
-  return { SPEC, design, meshes, solid, stl, threeMF, svgPath };
+  return { SPEC, design, plate, meshes, solid, stl, threeMF, svgPath };
 });

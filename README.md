@@ -5,7 +5,7 @@ Web page that turns typed text into a two-colour 3D-printable keyring (raised le
 - `site/index.html` - the published page (built, self-contained). Cloudflare Workers serves the `site` folder (see `wrangler.jsonc`); every push to `main` deploys.
 - `src/` - source: `template.html` (page), `kcore.js` (geometry), `fonts/` (Google Fonts, Open Font License / Apache), `lib/` (opentype.js, clipper-lib, earcut, fflate, three.js).
 
-Features: 14 fonts, letter height, raised or flush lettering, adjustable base, lettering height, border and hole, loop left/right/top/none, top and rotatable 3D preview, shareable design links (`?t=...&f=...`).
+Features: two styles - name keyring or UK number plate (yellow or white plate, black border and lettering, Barlow Condensed SemiBold, up to 12 characters) - 14 fonts, letter height, raised or flush lettering, adjustable base, lettering height, border and hole, loop left/right/top/none, top and rotatable 3D preview, shareable design links (`?t=...&f=...`).
 
 Rebuild after editing `src/`:
 
