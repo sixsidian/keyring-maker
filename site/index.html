@@ -8201,7 +8201,7 @@ const FONT_LIST = [
   ['Sriracha-Regular', 'Sriracha'], ['Kalam-Bold', 'Kalam Bold'],
 ];
 const SITE_URL = 'https://keyring-maker.stuartmarkharrison.workers.dev/';
-const STORE_KEY = SHOP ? 'keyring-shop-v2' : 'keyring-maker-v3';
+const STORE_KEY = SHOP ? 'keyring-shop-v3' : 'keyring-maker-v3';
 const $ = id => document.getElementById(id);
 const els = {};
 ['text','font','size','tight','base','layer','border','loop','hole','cBase','cText','count','sizeVal','baseVal','layerVal','borderVal','holeVal','holeField',
@@ -8211,7 +8211,7 @@ const els = {};
 let K, fonts = {}, current = null, timer = null, downloads, downloadsChecked = false, style = 'raised', view = 'top', viewer = null;
 
 // ---------- settings <-> link ----------
-const DEFAULTS = { t: SHOP ? 'YourName' : 'SampleText', f: 'Pattaya-Regular', h: 9, g: 1, s: 'raised', b: 2.4, l: 0.6, w: 1.6, lp: 'left', d: 4.2, c1: '#d4a52a', c2: '#141414' };
+const DEFAULTS = { t: SHOP ? 'YourText' : 'SampleText', f: 'Pattaya-Regular', h: 9, g: 1, s: 'raised', b: 2.4, l: 0.6, w: 1.6, lp: 'left', d: 4.2, c1: '#d4a52a', c2: '#141414' };
 function readSettings() {
   return { t: els.text.value, f: els.font.value, h: +els.size.value, g: els.tight.checked ? 1 : 0, s: style, b: +els.base.value, l: +els.layer.value,
     w: +els.border.value, lp: els.loop.value, d: +els.hole.value, c1: els.cBase.value, c2: els.cText.value };
