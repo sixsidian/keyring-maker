@@ -154,7 +154,7 @@ html.shop button.primary:hover:not(:disabled) { background: #17635F; }
         <input type="range" id="size" min="5" max="14" step="0.5" value="9">
         <span class="hint">Height of a capital letter.<span class="tool-only"> 9 mm matches the #Justice4Luce keyring.</span></span>
       </div>
-      <label class="check" for="tight"><input type="checkbox" id="tight" checked>
+      <label class="check tool-only" for="tight"><input type="checkbox" id="tight" checked>
         <span>Close up wide letter gaps<br><span class="hint">Pulls widely spaced letters closer together, such as after a #. Spaces between words are kept.</span></span></label>
 
       <div class="section-title"><span class="tool-only">Build</span><span class="shop-only">Style</span></div>
@@ -272,7 +272,7 @@ const FONT_LIST = [
   ['Sriracha-Regular', 'Sriracha'], ['Kalam-Bold', 'Kalam Bold'],
 ];
 const SITE_URL = 'https://keyring-maker.stuartmarkharrison.workers.dev/';
-const STORE_KEY = SHOP ? 'keyring-shop-v1' : 'keyring-maker-v3';
+const STORE_KEY = SHOP ? 'keyring-shop-v2' : 'keyring-maker-v3';
 const $ = id => document.getElementById(id);
 const els = {};
 ['text','font','size','tight','base','layer','border','loop','hole','cBase','cText','count','sizeVal','baseVal','layerVal','borderVal','holeVal','holeField',
@@ -282,7 +282,7 @@ const els = {};
 let K, fonts = {}, current = null, timer = null, downloads, downloadsChecked = false, style = 'raised', view = 'top', viewer = null;
 
 // ---------- settings <-> link ----------
-const DEFAULTS = { t: SHOP ? 'Your name' : 'SampleText', f: 'Pattaya-Regular', h: 9, g: 1, s: 'raised', b: 2.4, l: 0.6, w: 1.6, lp: 'left', d: 4.2, c1: '#d4a52a', c2: '#141414' };
+const DEFAULTS = { t: SHOP ? 'YourName' : 'SampleText', f: 'Pattaya-Regular', h: 9, g: 1, s: 'raised', b: 2.4, l: 0.6, w: 1.6, lp: 'left', d: 4.2, c1: '#d4a52a', c2: '#141414' };
 function readSettings() {
   return { t: els.text.value, f: els.font.value, h: +els.size.value, g: els.tight.checked ? 1 : 0, s: style, b: +els.base.value, l: +els.layer.value,
     w: +els.border.value, lp: els.loop.value, d: +els.hole.value, c1: els.cBase.value, c2: els.cText.value };
@@ -294,7 +294,7 @@ function applySettings(p) {
   const num = (el, x) => { const n = parseFloat(x); if (isFinite(n)) el.value = Math.min(+el.max, Math.max(+el.min, n)); };
   num(els.size, v.h); num(els.base, v.b); num(els.layer, v.l); num(els.border, v.w); num(els.hole, v.d);
   if (SHOP) { els.base.value = DEFAULTS.b; els.layer.value = DEFAULTS.l; els.border.value = DEFAULTS.w; els.hole.value = DEFAULTS.d; }
-  els.tight.checked = String(v.g) !== '0';
+  els.tight.checked = SHOP || String(v.g) !== '0';
   if (['left','right','top','none'].includes(v.lp)) els.loop.value = v.lp;
   setStyle(v.s === 'flush' ? 'flush' : 'raised', true);
   const col = x => /^#[0-9a-f]{6}$/i.test(x) ? x : null;
