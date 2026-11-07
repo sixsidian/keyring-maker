@@ -585,7 +585,7 @@ function setupShop() {
   });
   if (window.ResizeObserver && parentOrigin) {
     let last = 0;
-    new ResizeObserver(() => { const h = Math.ceil(document.documentElement.scrollHeight); if (h !== last) { last = h; parent.postMessage({ type: 'keyring:height', height: h }, parentOrigin); } }).observe(document.body);
+    new ResizeObserver(() => { const h = Math.ceil(document.body.getBoundingClientRect().height) + 2; if (h !== last) { last = h; parent.postMessage({ type: 'keyring:height', height: h }, parentOrigin); } }).observe(document.body);
   }
 }
 function shopColours(c1, c2) {
