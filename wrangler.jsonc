@@ -1,11 +1,17 @@
 {
-	// Static site: Cloudflare serves the files in ./site, no Worker script needed
+	// Static site in ./site, plus a small Worker (src/worker.js) that stores keyring preview pictures for the shop basket
 	"name": "keyring-maker",
 	"compatibility_date": "2026-11-06",
+	"main": "src/worker.js",
 	// Keep the public workers.dev address and preview addresses switched on across deploys
 	"workers_dev": true,
 	"preview_urls": true,
 	"assets": {
-		"directory": "./site"
-	}
+		"directory": "./site",
+		"binding": "ASSETS",
+		"run_worker_first": ["/preview"]
+	},
+	"kv_namespaces": [
+		{ "binding": "PREVIEWS", "id": "5110c9dd2af54aa59fe968e5cd01904d" }
+	]
 }

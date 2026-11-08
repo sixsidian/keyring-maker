@@ -8664,7 +8664,46 @@ function shopHint() {
   if (kind === 'name' && els.pBase.value === els.pText.value) return 'Tip: the base and lettering are the same colour, so the text will not stand out.';
   return 'Looks good. Add it to your basket when you are happy.';
 }
-function addToBasket() {
+// Square PNG of the keyring on the shop's pale cream background, stored by the site so the shop basket can show it.
+function previewPng() {
+  const d = current.d, b = d.bounds, flip = b.y1 + b.y0;
+  const side = Math.max(d.width, d.height) * 1.18, cx = (b.x0 + b.x1) / 2, cy = (b.y0 + b.y1) / 2;
+  const base = K.svgPath(d.body, flip), text = K.svgPath(d.inlay, flip), raised = current.m.style === 'raised';
+  const sb = stopsOf('base'), stx = stopsOf('text');
+  const grad = (id, stops, amt) => `<linearGradient id="${id}" x1="0" y1="0" x2="1" y2="0.35">` + stops.map((c, i) => `<stop offset="${stops.length > 1 ? i / (stops.length - 1) : 0}" stop-color="${amt ? shade(c, amt) : c}"/>`).join('') + '</linearGradient>';
+  const fillB = sb.length > 1 ? 'url(#gB)' : sb[0], fillBs = sb.length > 1 ? 'url(#gBs)' : shade(sb[0], -0.28);
+  const fillT = stx.length > 1 ? 'url(#gT)' : stx[0], fillTs = stx.length > 1 ? 'url(#gTs)' : shade(stx[0], 0.18);
+  const x0 = cx - side / 2, y0 = cy - side / 2;
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="480" height="480" viewBox="${x0} ${y0} ${side} ${side}">` +
+    `<defs>${grad('gB', sb)}${grad('gBs', sb, -0.28)}${grad('gT', stx)}${grad('gTs', stx, 0.18)}` +
+    `<radialGradient id="bg" cx="0.5" cy="0.45" r="0.75"><stop offset="0" stop-color="#FFF1E2"/><stop offset="1" stop-color="#FBF6EE"/></radialGradient></defs>` +
+    `<rect x="${x0}" y="${y0}" width="${side}" height="${side}" fill="url(#bg)"/>` +
+    `<path d="${base}" transform="translate(0.45 0.6)" fill="#000" fill-opacity="0.18" fill-rule="evenodd"/>` +
+    `<path d="${base}" fill="${fillBs}" fill-rule="evenodd" transform="translate(0.2 0.3)"/>` +
+    `<path d="${base}" fill="${fillB}" fill-rule="evenodd"/>` +
+    (raised ? `<path d="${text}" fill="${fillTs}" fill-rule="evenodd" transform="translate(0.12 0.18)"/>` : '') +
+    `<path d="${text}" fill="${fillT}" fill-rule="evenodd"/></svg>`;
+  return new Promise((resolve, reject) => {
+    const img = new Image(), url = URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml' }));
+    img.onload = () => {
+      const c = document.createElement('canvas'); c.width = c.height = 480;
+      c.getContext('2d').drawImage(img, 0, 0, 480, 480); URL.revokeObjectURL(url);
+      c.toBlob(bl => bl ? resolve(bl) : reject(new Error('no image')), 'image/png');
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('no image')); };
+    img.src = url;
+  });
+}
+async function savePreview(link) {
+  // Best effort: if this fails, the basket falls back to the normal product picture
+  try {
+    const png = await previewPng();
+    const ctl = new AbortController(); const t = setTimeout(() => ctl.abort(), 6000);
+    await fetch(location.origin + '/preview?' + link.split('?')[1], { method: 'POST', body: png, headers: { 'Content-Type': 'image/png' }, signal: ctl.signal });
+    clearTimeout(t);
+  } catch (e) {}
+}
+async function addToBasket() {
   if (!orderable()) return;
   if (!parentOrigin || parent === window) { setMsg('Open the Keyring Maker from the shop to order.', 'err'); return; }
   const d = current.d, m = current.m;
@@ -8682,6 +8721,7 @@ function addToBasket() {
     '_Design link': shareLink()
   };
   pending = true; setButtons(true); setMsg('Adding to your basket…');
+  await savePreview(props['_Design link']);
   parent.postMessage({ type: 'keyring:add', properties: props }, parentOrigin);
   setTimeout(() => { if (pending) { pending = false; setButtons(!current); setMsg('The shop did not respond. Please try again.', 'err'); } }, 15000);
 }
