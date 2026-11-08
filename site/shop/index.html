@@ -5,13 +5,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <script>
 const SHOP = true;
-if (SHOP) { document.documentElement.classList.add('shop'); document.documentElement.setAttribute('data-theme', 'light'); }
+document.documentElement.classList.add('nb'); document.documentElement.setAttribute('data-theme', 'light');
+if (SHOP) document.documentElement.classList.add('shop');
 </script>
 <title>Keyring Maker - The Custom 3D Print Shop</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet">
-<script>if (SHOP) document.write('<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700&family=Gochi+Hand&family=Work+Sans:wght@400;600&display=swap" rel="stylesheet">');</script>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700&family=Gochi+Hand&family=Work+Sans:wght@400;600&display=swap" rel="stylesheet">
 <style>
 :root {
   /* Layout: controls column beside a build-plate preview that shows the keyring at true proportions on a 10mm grid. */
@@ -109,9 +110,9 @@ button.primary.alt { background: transparent; color: var(--ink); border: 2px sol
 .share-row { display: flex; gap: 8px; }
 .share-row input { flex: 1; min-width: 0; font: inherit; font-size: 0.85rem; color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; }
 @media (prefers-reduced-motion: reduce) { .busy { transition: none; } }
-/* Shop mode: embedded in The Custom 3D Print Shop, styled as the Maker's Notebook */
+/* Maker's Notebook colours and fonts, matching The Custom 3D Print Shop (both the tool and the embedded shop version) */
 html:not(.shop) .shop-only, html.shop .tool-only { display: none !important; }
-html.shop {
+html.nb {
   --bg: #F3E6CC; --panel: #ffffff; --ink: #2B2118; --muted: #5A4A3A; --line: #D9C39C;
   --accent: #1F7F7B; --accent-ink: #ffffff; --plate: #ffffff; --plate-grid: #DCE6F2; --plate-ink: #5A4A3A;
   --ok: #17635F; --ok-bg: #DDEFEC; --warn: #8A2A40; --warn-bg: #F8E1E6;
@@ -119,12 +120,17 @@ html.shop {
 }
 html.shop body { background: transparent; }
 html.shop .wrap { padding: 4px 4px 12px; }
-html.shop .panel { border: 0; border-radius: 4px; box-shadow: 0 3px 0 var(--line); }
-html.shop .plate { border: 2px solid var(--ink); border-radius: 6px; background-image: linear-gradient(#EEF3F9 1px, transparent 1px), linear-gradient(90deg, #EEF3F9 1px, transparent 1px); background-size: 16px 16px; }
-html.shop input[type="text"], html.shop select { background: #fff; border: 2px solid var(--ink); }
-html.shop .field > label, html.shop .label { font-family: var(--font-display); font-weight: 600; }
-html.shop button.primary { font-family: var(--font-display); font-size: 1.1rem; border-radius: 8px; min-height: 52px; }
-html.shop button.primary:hover:not(:disabled) { background: #17635F; }
+html.nb .panel { border: 0; border-radius: 4px; box-shadow: 0 3px 0 var(--line); }
+html.nb .plate { border: 2px solid var(--ink); border-radius: 6px; background-image: linear-gradient(#EEF3F9 1px, transparent 1px), linear-gradient(90deg, #EEF3F9 1px, transparent 1px); background-size: 16px 16px; }
+html.nb input[type="text"], html.nb select { background: #fff; border: 2px solid var(--ink); }
+html.nb .field > label, html.nb .label { font-family: var(--font-display); font-weight: 600; }
+html.nb button.primary { font-family: var(--font-display); font-size: 1.1rem; border-radius: 8px; min-height: 52px; }
+html.nb button.primary:hover:not(:disabled) { background: #17635F; }
+html.nb:not(.shop) body { background-color: var(--bg); background-image: radial-gradient(rgba(43,33,24,0.05) 1px, transparent 1px); background-size: 6px 6px; }
+html.nb header h1 { font-family: var(--font-display); font-weight: 700; font-size: clamp(2rem, 4vw, 2.8rem); letter-spacing: 0; }
+html.nb header p { color: var(--muted); }
+html.nb .seg { border: 2px solid var(--ink); background: #fff; }
+html.nb .spec dt { font-weight: 600; }
 .colour-pick { display: flex; align-items: center; gap: 10px; }
 .colour-dot { width: 28px; height: 28px; border-radius: 50%; border: 2px solid var(--ink); flex: none; }
 .order-note { margin: 0; font-family: "Gochi Hand", cursive; font-size: 1.15rem; color: var(--muted); }
@@ -232,9 +238,12 @@ html.kind-plate #fontField, html.kind-plate #tightField, html.kind-plate #nameCo
         <p class="order-note">printed to order in your colours</p>
         <button type="button" class="primary" id="addToBasket" disabled>Add to basket</button>
       </div>
-      <div class="dl-row tool-only">
+      <div class="field tool-only">
+        <label for="orderNo">Order number <span class="hint">names the file</span></label>
+        <input type="text" id="orderNo" inputmode="numeric" placeholder="e.g. 1001" spellcheck="false">
+      </div>
+      <div class="tool-only">
         <button type="submit" class="primary" id="download" disabled>Download .3mf<small>Two colours, filament slots set</small></button>
-        <button type="button" class="primary alt" id="downloadStl" disabled>Download .stl<small>One piece, no colour data</small></button>
       </div>
       <div class="share tool-only">
         <span class="label">Share this design</span>
@@ -263,7 +272,6 @@ html.kind-plate #fontField, html.kind-plate #tightField, html.kind-plate #nameCo
       <div class="spec tool-only">
         <dl>
           <dt>.3mf</dt><dd>Base and lettering as two parts of one object, base on filament 1, lettering on filament 2</dd>
-          <dt>.stl</dt><dd>Base and lettering merged into one file with no colour data, for single-colour prints or other slicers</dd>
           <dt>Defaults</dt><dd>Raised lettering, 2.4 mm base, 0.6 mm lettering, 1.6 mm border and a 4.2 mm hole, matching the printed keyrings</dd>
         </dl>
       </div>
@@ -8259,7 +8267,7 @@ const STORE_KEY = SHOP ? 'keyring-shop-v4' : 'keyring-maker-v3';
 const $ = id => document.getElementById(id);
 const els = {};
 ['text','font','size','tight','base','layer','border','loop','hole','cBase','cText','count','sizeVal','baseVal','layerVal','borderVal','holeVal','holeField',
- 'styleRaised','styleFlush','styleHint','svg','gl','hint3d','viewTop','view3d','resetView','chips','msg','busy','download','downloadStl','shareUrl','copyLink',
+ 'styleRaised','styleFlush','styleHint','svg','gl','hint3d','viewTop','view3d','resetView','chips','msg','busy','download','shareUrl','copyLink',
  'pBase','pText','dotBase','dotText','addToBasket','kindName','kindPlate','plateField','plateYellow','plateWhite']
   .forEach(id => els[id] = $(id));
 let kind = 'name', plateCol = 'yellow', nameCols = null;
@@ -8315,6 +8323,7 @@ function init() {
     fonts[id] = opentype.parse(b64ToBuf(FONT_DATA[id]));
     const o = document.createElement('option'); o.value = id; o.textContent = label; els.font.appendChild(o);
   }
+  try { const o = new URLSearchParams(location.search).get('o'); if (o) document.getElementById('orderNo').value = o.replace(/[^0-9A-Za-z-]/g, ''); } catch (e) {}
   let start = loadFromLink();
   if (!start) { try { start = JSON.parse(localStorage.getItem(STORE_KEY) || 'null'); } catch (e) {} }
   applySettings(start || {});
@@ -8330,7 +8339,6 @@ function init() {
   els.view3d.addEventListener('click', () => setView('3d'));
   els.resetView.addEventListener('click', () => viewer && viewer.reset());
   $('controls').addEventListener('submit', e => { e.preventDefault(); download('3mf'); });
-  els.downloadStl.addEventListener('click', () => download('stl'));
   els.copyLink.addEventListener('click', copyLink);
   setupDownloads();
   schedule(0);
@@ -8371,7 +8379,7 @@ function saveState() {
   try { localStorage.setItem(STORE_KEY, JSON.stringify(readSettings())); } catch (e) {}
   els.shareUrl.value = shareLink();
 }
-function setButtons(off) { els.download.disabled = off; els.downloadStl.disabled = off; if (SHOP) els.addToBasket.disabled = off || !orderable(); }
+function setButtons(off) { els.download.disabled = off; if (SHOP) els.addToBasket.disabled = off || !orderable(); }
 
 function schedule(delay = 350) {
   labels();
@@ -8586,12 +8594,14 @@ async function download(kind) {
     const parts = current.parts;
     const ext = kind === '3mf' ? '.3mf' : '.stl';
     const bytes = kind === '3mf' ? K.threeMF(parts, current.text) : mergedStl(parts);
-    const fname = current.name + ext;
+    const ord = (document.getElementById('orderNo').value || '').replace(/[^0-9A-Za-z-]/g, '');
+    const base = ord ? 'Keyring ' + ord : current.name;
+    const fname = base + ext;
     const after = kind === '3mf' ? 'Open the .3mf in Bambu Studio: base on filament 1, lettering on filament 2.' : 'The .stl loads as one object in one colour.';
     if (downloads) {
       const zip = fflate.zipSync({ [fname]: bytes });
       try {
-        await downloads.save({ filename: current.name + ' ' + ext.slice(1) + '.zip', data: new Blob([zip]) });
+        await downloads.save({ filename: base + ' ' + ext.slice(1) + '.zip', data: new Blob([zip]) });
         setMsg('Saved. Unzip it first. ' + after);
       } catch (err) {
         const c = err && err.code;
