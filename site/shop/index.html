@@ -8,7 +8,7 @@ const SHOP = true;
 document.documentElement.classList.add('nb'); document.documentElement.setAttribute('data-theme', 'light');
 if (SHOP) document.documentElement.classList.add('shop');
 </script>
-<title>Keyring Maker - The Custom 3D Print Shop</title>
+<title>Keyring Maker</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet">
@@ -144,8 +144,8 @@ html.kind-plate #fontField, html.kind-plate #tightField, html.kind-plate #nameCo
 <body>
 <div class="wrap">
   <header class="tool-only">
-    <h1>Name Keyring Maker</h1>
-    <p>Type a name or message, pick a font, size and finish, then download two-colour print files: lettering on a solid base with a key loop.</p>
+    <h1>Keyring Maker</h1>
+    <p>Type any text, pick a font, size and finish, then download two-colour print files: lettering on a solid base with a key loop.</p>
   </header>
   <div class="grid">
     <form class="panel" id="controls" autocomplete="off">
@@ -8345,7 +8345,7 @@ function init() {
 }
 
 function colourChanged() { if (SHOP) shopDots(); draw(); if (viewer) viewer.colours(); saveState(); if (current) setMsg(SHOP ? shopHint() : downloadHint()); }
-// Name keyring: any font and colours. Number plate: plate font, yellow or white plate with black border and lettering.
+// Text keyring: any font and colours. Number plate: plate font, yellow or white plate with black border and lettering.
 function setKind(k, quiet) {
   if (k === 'plate' && kind !== 'plate') nameCols = [els.cBase.value, els.cText.value];
   if (k === 'name' && kind === 'plate' && nameCols) { els.cBase.value = nameCols[0]; els.cText.value = nameCols[1]; if (SHOP) shopDots(); }
