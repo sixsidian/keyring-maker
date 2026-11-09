@@ -304,12 +304,12 @@ const els = {};
  'styleRaised','styleFlush','styleHint','svg','gl','hint3d','viewTop','view3d','resetView','chips','msg','busy','download','shareUrl','copyLink',
  'pBase','pText','dotBase','dotText','addToBasket','kindName','kindPlate','plateField','plateYellow','plateWhite']
   .forEach(id => els[id] = $(id));
-let kind = 'name', plateCol = 'yellow', nameCols = null;
+let kind = 'text', plateCol = 'yellow', nameCols = null;
 const PLATE_FONT = 'BarlowCondensed-SemiBold', PLATE_INK = '#141414', PLATES = { yellow: { hex: '#febd17', name: 'Yellow' }, white: { hex: '#f2f2f2', name: 'White' } };
 let K, fonts = {}, current = null, timer = null, downloads, downloadsChecked = false, style = 'raised', view = 'top', viewer = null;
 
 // ---------- settings <-> link ----------
-const DEFAULTS = { t: SHOP ? 'YourText' : 'SampleText', f: SHOP ? FONT_LIST[0][0] : 'Pattaya-Regular', h: 9, g: 1, s: 'raised', b: 2.4, l: 0.6, w: 1.6, lp: 'left', d: 4.2, c1: '#d4a52a', c2: '#141414', k: 'name', pc: 'yellow' };
+const DEFAULTS = { t: SHOP ? 'YourText' : 'SampleText', f: SHOP ? FONT_LIST[0][0] : 'Pattaya-Regular', h: 9, g: 1, s: 'raised', b: 2.4, l: 0.6, w: 1.6, lp: 'left', d: 4.2, c1: '#d4a52a', c2: '#141414', k: 'text', pc: 'yellow' };
 function readSettings() {
   return { t: els.text.value, f: els.font.value, h: +els.size.value, g: els.tight.checked ? 1 : 0, s: style, b: +els.base.value, l: +els.layer.value,
     w: +els.border.value, lp: els.loop.value, d: +els.hole.value, c1: kind === 'plate' && nameCols ? nameCols[0] : els.cBase.value, c2: kind === 'plate' && nameCols ? nameCols[1] : els.cText.value, k: kind, pc: plateCol };
@@ -328,7 +328,7 @@ function applySettings(p) {
   els.cBase.value = col(v.c1) || DEFAULTS.c1; els.cText.value = col(v.c2) || DEFAULTS.c2;
   if (SHOP) shopColours(v.c1, v.c2);
   plateCol = v.pc === 'white' ? 'white' : 'yellow';
-  setKind(v.k === 'plate' ? 'plate' : 'name', true);
+  setKind(v.k === 'plate' ? 'plate' : 'text', true);
 }
 function shareLink() {
   const p = new URLSearchParams(), cur = readSettings();
@@ -363,7 +363,7 @@ function init() {
   applySettings(start || {});
   for (const id of ['text','font','size','tight','base','layer','border','loop','hole']) els[id].addEventListener('input', schedule);
   for (const el of [els.cBase, els.cText]) el.addEventListener('input', () => { draw(); if (viewer) viewer.colours(); saveState(); });
-  els.kindName.addEventListener('click', () => { setKind('name'); schedule(); });
+  els.kindName.addEventListener('click', () => { setKind('text'); schedule(); });
   els.kindPlate.addEventListener('click', () => { setKind('plate'); schedule(); });
   els.plateYellow.addEventListener('click', () => { plateCol = 'yellow'; setKind('plate', true); colourChanged(); });
   els.plateWhite.addEventListener('click', () => { plateCol = 'white'; setKind('plate', true); colourChanged(); });
@@ -382,9 +382,9 @@ function colourChanged() { if (SHOP) shopDots(); draw(); if (viewer) viewer.colo
 // Text keyring: any font and colours. Number plate: plate font, yellow or white plate with black border and lettering.
 function setKind(k, quiet) {
   if (k === 'plate' && kind !== 'plate') nameCols = [els.cBase.value, els.cText.value];
-  if (k === 'name' && kind === 'plate' && nameCols) { els.cBase.value = nameCols[0]; els.cText.value = nameCols[1]; if (SHOP) shopDots(); }
+  if (k === 'text' && kind === 'plate' && nameCols) { els.cBase.value = nameCols[0]; els.cText.value = nameCols[1]; if (SHOP) shopDots(); }
   kind = k;
-  els.kindName.setAttribute('aria-pressed', k === 'name'); els.kindPlate.setAttribute('aria-pressed', k === 'plate');
+  els.kindName.setAttribute('aria-pressed', k === 'text'); els.kindPlate.setAttribute('aria-pressed', k === 'plate');
   document.documentElement.classList.toggle('kind-plate', k === 'plate');
   els.plateField.hidden = k !== 'plate';
   els.text.maxLength = k === 'plate' ? 12 : 20;
@@ -477,7 +477,7 @@ function draw() {
 // Colours for the base and lettering: one colour, or several for gradient / multi-colour (silk) filaments.
 function stopsOf(which) {
   const el = which === 'base' ? els.cBase : els.cText;
-  if (SHOP && kind === 'name' && palette.length) {
+  if (SHOP && kind === 'text' && palette.length) {
     const c = palette[+(which === 'base' ? els.pBase : els.pText).value];
     if (c && c.stops && c.stops.length > 1 && c.hex === el.value.toLowerCase()) return c.stops;
   }
@@ -695,7 +695,7 @@ function shopHint() {
   if (!current) return '';
   if (current.d.pieces !== 1) return 'The base splits into separate pieces. Shorten the gap between words to order this.';
   if (current.missing.length) return 'Some characters are not in this font. Remove them or pick another font to order this.';
-  if (kind === 'name' && els.pBase.value === els.pText.value) return 'Tip: the base and lettering are the same colour, so the text will not stand out.';
+  if (kind === 'text' && els.pBase.value === els.pText.value) return 'Tip: the base and lettering are the same colour, so the text will not stand out.';
   return 'Looks good. Add it to your basket when you are happy.';
 }
 // Square PNG of the keyring on the shop's pale cream background, stored by the site so the shop basket can show it.
