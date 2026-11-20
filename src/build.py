@@ -1,10 +1,11 @@
 """Builds site/index.html: one self-contained page with the fonts and libraries embedded."""
 import base64, json, pathlib
 src = pathlib.Path(__file__).parent; root = src.parent
+VERSION = (src / 'VERSION').read_text().strip()  # bump on every push so the page shows when a change has deployed
 t = (src / 'template.html').read_text()
 fonts = {p.stem: base64.b64encode(p.read_bytes()).decode() for p in sorted((src / 'fonts').glob('*.ttf'))}
 proj = json.dumps(json.dumps(json.loads((src / 'project_settings.json').read_text()), separators=(',', ':'))).replace('</', '<\\/')
-t = t.replace("/*PROJECT*/'{}'", proj)
+t = t.replace("/*PROJECT*/'{}'", proj).replace('/*VERSION*/', VERSION)
 t = t.replace('/*KCORE*/', (src / 'kcore.js').read_text()).replace('/*FONTS*/', json.dumps(fonts))
 libs = {'https://cdn.jsdelivr.net/npm/opentype.js@1.3.4/dist/opentype.min.js': 'opentype.min.js',
         'https://cdn.jsdelivr.net/npm/clipper-lib@6.4.2/clipper.js': 'clipper.js',

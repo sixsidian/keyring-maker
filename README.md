@@ -10,6 +10,6 @@ Print settings: base 2.0 mm, lettering 1.0 mm raised and sunk 0.4 mm into a rece
 
 Features: two styles - keyring or UK number plate (yellow or white plate, black border and lettering, Barlow Condensed SemiBold, up to 12 characters) - 14 fonts, letter height, raised or flush lettering, adjustable border and hole, overall size 70-150%, loop left/right/top/none, top and rotatable 3D preview, shareable design links (`?t=...&f=...`).
 
-Rebuild after editing `src/`:
+Bump the version in `src/VERSION` on every push (shown top right of the page), then rebuild after editing `src/`:
 
     python3 src/build.py
