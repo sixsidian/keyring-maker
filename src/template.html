@@ -187,16 +187,6 @@ html.kind-plate #fontField, html.kind-plate #tightField, html.kind-plate #nameCo
         </div>
         <span class="hint" id="styleHint"></span>
       </div>
-      <div class="pair tool-only">
-        <div class="field">
-          <label for="base">Base <span class="hint" id="baseVal"></span></label>
-          <input type="range" id="base" min="1.2" max="4" step="0.2" value="2.4">
-        </div>
-        <div class="field">
-          <label for="layer">Lettering <span class="hint" id="layerVal"></span></label>
-          <input type="range" id="layer" min="0.4" max="1.6" step="0.2" value="0.6">
-        </div>
-      </div>
       <div class="field tool-only">
         <label for="border">Border width <span class="hint" id="borderVal"></span></label>
         <input type="range" id="border" min="1" max="3" step="0.2" value="1.6">
@@ -278,7 +268,7 @@ html.kind-plate #fontField, html.kind-plate #tightField, html.kind-plate #nameCo
       <div class="spec tool-only">
         <dl>
           <dt>.3mf</dt><dd>Base and lettering as two parts of one object, base on filament 1, lettering on filament 2</dd>
-          <dt>Defaults</dt><dd>Raised lettering, 2.4 mm base, 0.6 mm lettering, 1.6 mm border and a 4.2 mm hole, matching the printed keyrings</dd>
+          <dt>Defaults</dt><dd>Raised lettering, 2.0 mm base, 1.0 mm lettering, 1.6 mm border and a 4.2 mm hole, matching the MakerWorld template</dd>
         </dl>
       </div>
     </section>
@@ -306,7 +296,7 @@ const SITE_URL = 'https://keyring-maker.stuartmarkharrison.workers.dev/';
 const STORE_KEY = SHOP ? 'keyring-shop-v4' : 'keyring-maker-v3';
 const $ = id => document.getElementById(id);
 const els = {};
-['text','font','size','scale','scaleVal','tight','base','layer','border','loop','hole','cBase','cText','count','sizeVal','baseVal','layerVal','borderVal','holeVal','holeField',
+['text','font','size','scale','scaleVal','tight','border','loop','hole','cBase','cText','count','sizeVal','borderVal','holeVal','holeField',
  'styleRaised','styleFlush','styleHint','svg','gl','hint3d','viewTop','view3d','resetView','chips','msg','busy','download','shareUrl','copyLink',
  'pBase','pText','dotBase','dotText','addToBasket','kindName','kindPlate','plateField','plateYellow','plateWhite']
   .forEach(id => els[id] = $(id));
@@ -315,9 +305,9 @@ const PLATE_FONT = 'BarlowCondensed-SemiBold', PLATE_INK = '#141414', PLATES = {
 let K, fonts = {}, current = null, timer = null, downloads, downloadsChecked = false, style = 'raised', view = 'top', viewer = null;
 
 // ---------- settings <-> link ----------
-const DEFAULTS = { t: SHOP ? 'YourText' : 'SampleText', f: SHOP ? FONT_LIST[0][0] : 'Pattaya-Regular', h: 9, g: 1, s: 'raised', b: 2.4, l: 0.6, w: 1.6, lp: 'left', d: 4.2, c1: '#d4a52a', c2: '#141414', k: 'text', pc: 'yellow', sc: 100 };
+const DEFAULTS = { t: SHOP ? 'YourText' : 'SampleText', f: SHOP ? FONT_LIST[0][0] : 'Pattaya-Regular', h: 9, g: 1, s: 'raised', w: 1.6, lp: 'left', d: 4.2, c1: '#d4a52a', c2: '#141414', k: 'text', pc: 'yellow', sc: 100 };
 function readSettings() {
-  return { t: els.text.value, f: els.font.value, h: +els.size.value, g: els.tight.checked ? 1 : 0, s: style, b: +els.base.value, l: +els.layer.value,
+  return { t: els.text.value, f: els.font.value, h: +els.size.value, g: els.tight.checked ? 1 : 0, s: style,
     w: +els.border.value, lp: els.loop.value, d: +els.hole.value, c1: kind === 'plate' && nameCols ? nameCols[0] : els.cBase.value, c2: kind === 'plate' && nameCols ? nameCols[1] : els.cText.value, k: kind, pc: plateCol, sc: +els.scale.value };
 }
 function applySettings(p) {
@@ -325,8 +315,8 @@ function applySettings(p) {
   els.text.value = String(v.t).slice(0, v.k === 'plate' ? 12 : 20);
   if (fonts[v.f]) els.font.value = v.f;
   const num = (el, x) => { const n = parseFloat(x); if (isFinite(n)) el.value = Math.min(+el.max, Math.max(+el.min, n)); };
-  num(els.size, v.h); num(els.scale, v.sc); num(els.base, v.b); num(els.layer, v.l); num(els.border, v.w); num(els.hole, v.d);
-  if (SHOP) { els.base.value = DEFAULTS.b; els.layer.value = DEFAULTS.l; els.border.value = DEFAULTS.w; els.hole.value = DEFAULTS.d; }
+  num(els.size, v.h); num(els.scale, v.sc); num(els.border, v.w); num(els.hole, v.d);
+  if (SHOP) { els.border.value = DEFAULTS.w; els.hole.value = DEFAULTS.d; }
   els.tight.checked = SHOP || String(v.g) !== '0';
   if (['left','right','top','none'].includes(v.lp)) els.loop.value = v.lp;
   setStyle(v.s === 'flush' ? 'flush' : 'raised', true);
@@ -367,7 +357,7 @@ function init() {
   let start = loadFromLink();
   if (!start) { try { start = JSON.parse(localStorage.getItem(STORE_KEY) || 'null'); } catch (e) {} }
   applySettings(start || {});
-  for (const id of ['text','font','size','scale','tight','base','layer','border','loop','hole']) els[id].addEventListener('input', schedule);
+  for (const id of ['text','font','size','scale','tight','border','loop','hole']) els[id].addEventListener('input', schedule);
   for (const el of [els.cBase, els.cText]) el.addEventListener('input', () => { draw(); if (viewer) viewer.colours(); saveState(); });
   els.kindName.addEventListener('click', () => { setKind('text'); schedule(); });
   els.kindPlate.addEventListener('click', () => { setKind('plate'); schedule(); });
@@ -410,8 +400,6 @@ function labels() {
   els.count.textContent = els.text.value.length + ' / ' + els.text.maxLength;
   els.sizeVal.textContent = r1(els.size.value) + ' mm';
   els.scaleVal.textContent = Math.round(els.scale.value) + '%';
-  els.baseVal.textContent = r1(els.base.value) + ' mm';
-  els.layerVal.textContent = r1(els.layer.value) + ' mm';
   els.borderVal.textContent = r1(els.border.value) + ' mm';
   els.holeVal.textContent = r1(els.hole.value) + ' mm';
   els.holeField.style.display = els.loop.value === 'none' ? 'none' : '';
@@ -441,7 +429,7 @@ function rebuild() {
       : K.design(font, text, { cap: +els.size.value, tight: els.tight.checked, border: +els.border.value, loop: els.loop.value, hole: +els.hole.value });
     if (!d0) throw new Error('empty');
     const k = +els.scale.value / 100;
-    const m = { base: +els.base.value * k, layer: +els.layer.value * k, style };
+    const m = { base: K.SPEC.base * k, layer: K.SPEC.raised * k, style };
     const d = K.scaleDesign(d0, k);
     current = { d, m, text, name: cleanName(text) + ' keyring', parts: K.meshes(d, m), missing: [...new Set(missing)] };
     draw(); chips();
@@ -484,6 +472,13 @@ function draw() {
     `<text x="${sx + 11.2}" y="${sy + 0.85}" stroke="none">10 mm</text></g>`;
 }
 // Colours for the base and lettering: one colour, or several for gradient / multi-colour (silk) filaments.
+// Bambu Studio print settings from the MakerWorld template (X2D, 0.20mm Standard, PLA Basic); the two filament colours are set to this design's colours
+const PROJECT = JSON.parse(/*PROJECT*/'{}');
+function projectSettings() {
+  const p = Object.assign({}, PROJECT), hex = s => (s[0] || '#ffffff').toUpperCase() + 'FF';
+  if (p.filament_colour) p.filament_colour = [hex(stopsOf('base')), hex(stopsOf('text'))];
+  return JSON.stringify(p);
+}
 function stopsOf(which) {
   const el = which === 'base' ? els.cBase : els.cText;
   if (SHOP && kind === 'text' && palette.length) {
@@ -636,7 +631,7 @@ async function download(kind) {
   try {
     const parts = current.parts;
     const ext = kind === '3mf' ? '.3mf' : '.stl';
-    const bytes = kind === '3mf' ? K.threeMF(parts, current.text) : mergedStl(parts);
+    const bytes = kind === '3mf' ? K.threeMF(parts, current.text, projectSettings()) : mergedStl(parts);
     const ord = (document.getElementById('orderNo').value || '').replace(/[^0-9A-Za-z-]/g, '');
     const base = ord ? 'Keyring ' + ord : current.name;
     const fname = base + ext;

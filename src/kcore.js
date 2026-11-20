@@ -5,7 +5,7 @@
   else root.KCore = factory;
 })(this, function (ClipperLib, earcut, fflate) {
   const S = 1000; // clipper integer units per mm
-  const SPEC = { border: 1.6, close: 2.0, base: 2.4, raised: 0.6, loopWall: 2.1, loopR: 4.2, holeR: 2.1, loopClose: 1.0, inlayInset: 0.4, bridgeH: 3.0 };
+  const SPEC = { border: 1.6, close: 2.0, base: 2.0, raised: 1.0, loopWall: 2.1, loopR: 4.2, holeR: 2.1, loopClose: 1.0, inlayInset: 0.4, bridgeH: 3.0 };
   const CT = ClipperLib.ClipType, PT = ClipperLib.PolyType, PFT = ClipperLib.PolyFillType;
 
   // ---------- path helpers ----------
@@ -300,7 +300,7 @@
     return new Uint8Array(buf);
   }
   const esc = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
-  function threeMF(parts, name) {
+  function threeMF(parts, name, project) {
     const objs = parts.map((p, i) => {
       const V = p.mesh.V, F = p.mesh.F; let v = '', t = '';
       for (let k = 0; k < V.length; k += 3) v += `<vertex x="${V[k].toFixed(4)}" y="${V[k+1].toFixed(4)}" z="${V[k+2].toFixed(4)}"/>`;
@@ -316,7 +316,9 @@
     parts.forEach((p, i) => { cfg += `    <part id="${i+1}" subtype="normal_part">\n      <metadata key="name" value="${esc(p.name)}"/>\n      <metadata key="extruder" value="${p.slot}"/>\n    </part>\n`; });
     cfg += '  </object>\n</config>\n';
     const u = fflate.strToU8;
-    return fflate.zipSync({ '[Content_Types].xml': u(ct), '_rels/.rels': u(rels), '3D/3dmodel.model': u(model), 'Metadata/model_settings.config': u(cfg) }, { level: 6 });
+    const files = { '[Content_Types].xml': u(ct), '_rels/.rels': u(rels), '3D/3dmodel.model': u(model), 'Metadata/model_settings.config': u(cfg) };
+    if (project) files['Metadata/project_settings.config'] = u(project);
+    return fflate.zipSync(files, { level: 6 });
   }
 
   // SVG path data for preview (evenodd)
