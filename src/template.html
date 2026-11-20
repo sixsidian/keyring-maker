@@ -173,6 +173,11 @@ html.kind-plate #fontField, html.kind-plate #tightField, html.kind-plate #nameCo
         <input type="range" id="size" min="7.5" max="21" step="0.5" value="13.5">
         <span class="hint">Height of a capital letter.</span>
       </div>
+      <div class="field">
+        <label for="bold">Letter thickness <span class="hint" id="boldVal"></span></label>
+        <input type="range" id="bold" min="0" max="1" step="0.1" value="0.3">
+        <span class="hint">Makes every stroke of the lettering thicker, so thin script letters print stronger.</span>
+      </div>
       <label class="check tool-only" for="tight" id="tightField"><input type="checkbox" id="tight" checked>
         <span>Close up wide letter gaps<br><span class="hint">Pulls widely spaced letters closer together, such as after a #. Spaces between words are kept.</span></span></label>
 
@@ -297,10 +302,10 @@ const FONT_LIST = [
   ['Sriracha-Regular', 'Sriracha'], ['Kalam-Bold', 'Kalam Bold'],
 ].sort((a, b) => a[1].localeCompare(b[1], 'en'));
 const SITE_URL = 'https://keyring-maker.stuartmarkharrison.workers.dev/';
-const STORE_KEY = SHOP ? 'keyring-shop-v5' : 'keyring-maker-v4';
+const STORE_KEY = SHOP ? 'keyring-shop-v6' : 'keyring-maker-v5';
 const $ = id => document.getElementById(id);
 const els = {};
-['text','font','size','scale','scaleVal','tight','border','loop','hole','cBase','cText','count','sizeVal','borderVal','holeVal','holeField',
+['text','font','size','scale','scaleVal','bold','boldVal','tight','border','loop','hole','cBase','cText','count','sizeVal','borderVal','holeVal','holeField',
  'styleRaised','styleFlush','styleHint','svg','gl','hint3d','viewTop','view3d','resetView','chips','msg','busy','download','shareUrl','copyLink',
  'pBase','pText','dotBase','dotText','addToBasket','kindName','kindPlate','plateField','plateYellow','plateWhite']
   .forEach(id => els[id] = $(id));
@@ -309,17 +314,17 @@ const PLATE_FONT = 'BarlowCondensed-SemiBold', PLATE_INK = '#141414', PLATES = {
 let K, fonts = {}, current = null, timer = null, downloads, downloadsChecked = false, style = 'raised', view = 'top', viewer = null;
 
 // ---------- settings <-> link ----------
-const DEFAULTS = { t: SHOP ? 'YourText' : 'SampleText', f: SHOP ? FONT_LIST[0][0] : 'Pattaya-Regular', h: 13.5, g: 1, s: 'raised', w: 2.4, lp: 'left', d: 4.2, c1: '#d4a52a', c2: '#141414', k: 'text', pc: 'yellow', sc: 100 };
+const DEFAULTS = { t: SHOP ? 'YourText' : 'SampleText', f: SHOP ? FONT_LIST[0][0] : 'Pattaya-Regular', h: 13.5, g: 1, s: 'raised', w: 2.4, lp: 'left', d: 4.2, c1: '#d4a52a', c2: '#141414', k: 'text', pc: 'yellow', sc: 100, bd: 0.3 };
 function readSettings() {
   return { t: els.text.value, f: els.font.value, h: +els.size.value, g: els.tight.checked ? 1 : 0, s: style,
-    w: +els.border.value, lp: els.loop.value, d: +els.hole.value, c1: kind === 'plate' && nameCols ? nameCols[0] : els.cBase.value, c2: kind === 'plate' && nameCols ? nameCols[1] : els.cText.value, k: kind, pc: plateCol, sc: +els.scale.value };
+    w: +els.border.value, lp: els.loop.value, d: +els.hole.value, c1: kind === 'plate' && nameCols ? nameCols[0] : els.cBase.value, c2: kind === 'plate' && nameCols ? nameCols[1] : els.cText.value, k: kind, pc: plateCol, sc: +els.scale.value, bd: +els.bold.value };
 }
 function applySettings(p) {
   const v = Object.assign({}, DEFAULTS, p);
   els.text.value = String(v.t).slice(0, v.k === 'plate' ? 12 : 20);
   if (fonts[v.f]) els.font.value = v.f;
   const num = (el, x) => { const n = parseFloat(x); if (isFinite(n)) el.value = Math.min(+el.max, Math.max(+el.min, n)); };
-  num(els.size, v.h); num(els.scale, v.sc); num(els.border, v.w); num(els.hole, v.d);
+  num(els.size, v.h); num(els.scale, v.sc); num(els.bold, v.bd); num(els.border, v.w); num(els.hole, v.d);
   if (SHOP) { els.border.value = DEFAULTS.w; els.hole.value = DEFAULTS.d; }
   els.tight.checked = SHOP || String(v.g) !== '0';
   if (['left','right','top','none'].includes(v.lp)) els.loop.value = v.lp;
@@ -361,7 +366,7 @@ function init() {
   let start = loadFromLink();
   if (!start) { try { start = JSON.parse(localStorage.getItem(STORE_KEY) || 'null'); } catch (e) {} }
   applySettings(start || {});
-  for (const id of ['text','font','size','scale','tight','border','loop','hole']) els[id].addEventListener('input', schedule);
+  for (const id of ['text','font','size','scale','bold','tight','border','loop','hole']) els[id].addEventListener('input', schedule);
   for (const el of [els.cBase, els.cText]) el.addEventListener('input', () => { draw(); if (viewer) viewer.colours(); saveState(); });
   els.kindName.addEventListener('click', () => { setKind('text'); schedule(); });
   els.kindPlate.addEventListener('click', () => { setKind('plate'); schedule(); });
@@ -404,6 +409,7 @@ function labels() {
   els.count.textContent = els.text.value.length + ' / ' + els.text.maxLength;
   els.sizeVal.textContent = r1(els.size.value) + ' mm';
   els.scaleVal.textContent = Math.round(els.scale.value) + '%';
+  els.boldVal.textContent = '+' + r1(els.bold.value * 2) + ' mm';
   els.borderVal.textContent = r1(els.border.value) + ' mm';
   els.holeVal.textContent = r1(els.hole.value) + ' mm';
   els.holeField.style.display = els.loop.value === 'none' ? 'none' : '';
@@ -430,7 +436,7 @@ function rebuild() {
   try {
     const d0 = kind === 'plate'
       ? K.plate(font, text, { cap: +els.size.value, loop: els.loop.value, hole: +els.hole.value })
-      : K.design(font, text, { cap: +els.size.value, tight: els.tight.checked, border: +els.border.value, loop: els.loop.value, hole: +els.hole.value });
+      : K.design(font, text, { cap: +els.size.value, bold: +els.bold.value, tight: els.tight.checked, border: +els.border.value, loop: els.loop.value, hole: +els.hole.value });
     if (!d0) throw new Error('empty');
     const k = +els.scale.value / 100;
     const m = { base: K.SPEC.base * k, layer: K.SPEC.raised * k, sink: K.SPEC.sink * k, style };

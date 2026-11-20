@@ -8,7 +8,7 @@ Web page that turns typed text into a two-colour 3D-printable keyring (raised le
 
 Print settings: base 2.0 mm, lettering 1.0 mm raised and sunk 0.4 mm into a recess in the base (so the colours grip), 3.0 mm total, taken from a MakerWorld template; its Bambu Studio print profile (`src/project_settings.json`, X2D, 0.20mm Standard, PLA Basic) is embedded in every .3mf with the filament colours set to the design colours.
 
-Features: two styles - keyring or UK number plate (yellow or white plate, black border and lettering, Barlow Condensed SemiBold, up to 12 characters) - 14 fonts, letter height, raised or flush lettering, adjustable border and hole, overall size 70-150%, loop left/right/top/none, top and rotatable 3D preview, shareable design links (`?t=...&f=...`).
+Features: two styles - keyring or UK number plate (yellow or white plate, black border and lettering, Barlow Condensed SemiBold, up to 12 characters) - 14 fonts, letter height, raised or flush lettering, adjustable border and hole, letter thickness, overall size 70-150%, loop left/right/top/none, top and rotatable 3D preview, shareable design links (`?t=...&f=...`).
 
 Bump the version in `src/VERSION` on every push (shown top right of the page), then rebuild after editing `src/`:
 

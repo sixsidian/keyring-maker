@@ -106,8 +106,9 @@
 
   // ---------- 2D design ----------
   function design(font, text, o) {
-    o = Object.assign({ cap: 9, tight: true, border: SPEC.border, loop: 'left', hole: SPEC.holeR * 2 }, o || {});
-    const T = layoutText(font, text, o.cap, o.tight);
+    o = Object.assign({ cap: 9, tight: true, border: SPEC.border, loop: 'left', hole: SPEC.holeR * 2, bold: 0 }, o || {});
+    let T = layoutText(font, text, o.cap, o.tight);
+    if (o.bold > 0 && T.length) T = union(offset(T, o.bold), [], PFT.pftNonZero); // thicken every stroke by o.bold each side
     if (!T.length) return null;
     const tb = bounds(T);
     let body = offset(T, o.border);
