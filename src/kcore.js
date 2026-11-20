@@ -183,6 +183,15 @@
     c.AddPaths(paths, PT.ptSubject, true); c.Execute(CT.ctUnion, pt, PFT.pftNonZero, PFT.pftNonZero); return pt;
   }
 
+  // Uniform scale of a finished design (x, y and z are scaled equally; pass scaled base/layer to meshes()).
+  function scaleDesign(d, k) {
+    if (!d || Math.abs(k - 1) < 1e-9) return d;
+    const sc = paths => paths.map(p => p.map(q => ({ X: Math.round(q.X * k), Y: Math.round(q.Y * k) })));
+    const b = d.bounds;
+    return Object.assign({}, d, { body: sc(d.body), inlay: sc(d.inlay), bounds: { x0: b.x0 * k, y0: b.y0 * k, x1: b.x1 * k, y1: b.y1 * k },
+      width: d.width * k, height: d.height * k, loop: d.loop ? { cx: d.loop.cx * k, cy: d.loop.cy * k } : null });
+  }
+
   // ---------- meshing ----------
   // Rings stay in clipper integer units so shared edges match exactly; vertices are de-duplicated by position.
   function pointInRing(x, y, r) {
@@ -315,5 +324,5 @@
     return paths.map(p => 'M' + p.map(q => (q.X / S).toFixed(3) + ' ' + (flipY - q.Y / S).toFixed(3)).join('L') + 'Z').join('');
   }
 
-  return { SPEC, design, plate, meshes, solid, stl, threeMF, svgPath };
+  return { SPEC, design, plate, scaleDesign, meshes, solid, stl, threeMF, svgPath };
 });

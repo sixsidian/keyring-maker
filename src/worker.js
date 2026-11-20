@@ -3,7 +3,7 @@
 // GET  /preview?<design settings>  returns it, so the basket can show it from the design link alone.
 // Everything else is served from the static site.
 
-const KEYS = ['t', 'f', 'h', 'g', 's', 'b', 'l', 'w', 'lp', 'd', 'c1', 'c2', 'k', 'pc'];
+const KEYS = ['t', 'f', 'h', 'g', 's', 'b', 'l', 'w', 'lp', 'd', 'c1', 'c2', 'k', 'pc', 'sc'];
 const MAX_BYTES = 500 * 1024;
 const KEEP_SECONDS = 400 * 24 * 60 * 60;
 
