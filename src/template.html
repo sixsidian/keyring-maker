@@ -166,8 +166,8 @@ html.kind-plate #fontField, html.kind-plate #tightField, html.kind-plate #nameCo
       </div>
       <div class="field">
         <label for="size">Letter height <span class="hint" id="sizeVal"></span></label>
-        <input type="range" id="size" min="5" max="14" step="0.5" value="9">
-        <span class="hint">Height of a capital letter.<span class="tool-only"> 9 mm matches the #Justice4Luce keyring.</span></span>
+        <input type="range" id="size" min="7.5" max="21" step="0.5" value="13.5">
+        <span class="hint">Height of a capital letter.</span>
       </div>
       <label class="check tool-only" for="tight" id="tightField"><input type="checkbox" id="tight" checked>
         <span>Close up wide letter gaps<br><span class="hint">Pulls widely spaced letters closer together, such as after a #. Spaces between words are kept.</span></span></label>
@@ -189,7 +189,7 @@ html.kind-plate #fontField, html.kind-plate #tightField, html.kind-plate #nameCo
       </div>
       <div class="field tool-only">
         <label for="border">Border width <span class="hint" id="borderVal"></span></label>
-        <input type="range" id="border" min="1" max="3" step="0.2" value="1.6">
+        <input type="range" id="border" min="1.6" max="4.5" step="0.2" value="2.4">
       </div>
       <div class="field">
         <label for="loop">Key loop</label>
@@ -268,7 +268,7 @@ html.kind-plate #fontField, html.kind-plate #tightField, html.kind-plate #nameCo
       <div class="spec tool-only">
         <dl>
           <dt>.3mf</dt><dd>Base and lettering as two parts of one object, base on filament 1, lettering on filament 2</dd>
-          <dt>Defaults</dt><dd>Raised lettering, 2.0 mm base, 1.0 mm lettering, 1.6 mm border and a 4.2 mm hole, matching the MakerWorld template</dd>
+          <dt>Defaults</dt><dd>Raised lettering, 2.0 mm base, 1.0 mm lettering, 13.5 mm letters, 2.4 mm border and a 4.2 mm hole</dd>
         </dl>
       </div>
     </section>
@@ -293,7 +293,7 @@ const FONT_LIST = [
   ['Sriracha-Regular', 'Sriracha'], ['Kalam-Bold', 'Kalam Bold'],
 ].sort((a, b) => a[1].localeCompare(b[1], 'en'));
 const SITE_URL = 'https://keyring-maker.stuartmarkharrison.workers.dev/';
-const STORE_KEY = SHOP ? 'keyring-shop-v4' : 'keyring-maker-v3';
+const STORE_KEY = SHOP ? 'keyring-shop-v5' : 'keyring-maker-v4';
 const $ = id => document.getElementById(id);
 const els = {};
 ['text','font','size','scale','scaleVal','tight','border','loop','hole','cBase','cText','count','sizeVal','borderVal','holeVal','holeField',
@@ -305,7 +305,7 @@ const PLATE_FONT = 'BarlowCondensed-SemiBold', PLATE_INK = '#141414', PLATES = {
 let K, fonts = {}, current = null, timer = null, downloads, downloadsChecked = false, style = 'raised', view = 'top', viewer = null;
 
 // ---------- settings <-> link ----------
-const DEFAULTS = { t: SHOP ? 'YourText' : 'SampleText', f: SHOP ? FONT_LIST[0][0] : 'Pattaya-Regular', h: 9, g: 1, s: 'raised', w: 1.6, lp: 'left', d: 4.2, c1: '#d4a52a', c2: '#141414', k: 'text', pc: 'yellow', sc: 100 };
+const DEFAULTS = { t: SHOP ? 'YourText' : 'SampleText', f: SHOP ? FONT_LIST[0][0] : 'Pattaya-Regular', h: 13.5, g: 1, s: 'raised', w: 2.4, lp: 'left', d: 4.2, c1: '#d4a52a', c2: '#141414', k: 'text', pc: 'yellow', sc: 100 };
 function readSettings() {
   return { t: els.text.value, f: els.font.value, h: +els.size.value, g: els.tight.checked ? 1 : 0, s: style,
     w: +els.border.value, lp: els.loop.value, d: +els.hole.value, c1: kind === 'plate' && nameCols ? nameCols[0] : els.cBase.value, c2: kind === 'plate' && nameCols ? nameCols[1] : els.cText.value, k: kind, pc: plateCol, sc: +els.scale.value };
