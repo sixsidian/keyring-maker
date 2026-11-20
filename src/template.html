@@ -429,7 +429,7 @@ function rebuild() {
       : K.design(font, text, { cap: +els.size.value, tight: els.tight.checked, border: +els.border.value, loop: els.loop.value, hole: +els.hole.value });
     if (!d0) throw new Error('empty');
     const k = +els.scale.value / 100;
-    const m = { base: K.SPEC.base * k, layer: K.SPEC.raised * k, style };
+    const m = { base: K.SPEC.base * k, layer: K.SPEC.raised * k, sink: K.SPEC.sink * k, style };
     const d = K.scaleDesign(d0, k);
     current = { d, m, text, name: cleanName(text) + ' keyring', parts: K.meshes(d, m), missing: [...new Set(missing)] };
     draw(); chips();

@@ -7935,7 +7935,7 @@ html.kind-plate #fontField, html.kind-plate #tightField, html.kind-plate #nameCo
   else root.KCore = factory;
 })(this, function (ClipperLib, earcut, fflate) {
   const S = 1000; // clipper integer units per mm
-  const SPEC = { border: 1.6, close: 2.0, base: 2.0, raised: 1.0, loopWall: 2.1, loopR: 4.2, holeR: 2.1, loopClose: 1.0, inlayInset: 0.4, bridgeH: 3.0 };
+  const SPEC = { border: 1.6, close: 2.0, base: 2.0, raised: 1.0, sink: 0.4, loopWall: 2.1, loopR: 4.2, holeR: 2.1, loopClose: 1.0, inlayInset: 0.4, bridgeH: 3.0 };
   const CT = ClipperLib.ClipType, PT = ClipperLib.PolyType, PFT = ClipperLib.PolyFillType;
 
   // ---------- path helpers ----------
@@ -8187,7 +8187,7 @@ html.kind-plate #fontField, html.kind-plate #tightField, html.kind-plate #nameCo
   }
   // style 'raised': lettering stands on top of the base. 'flush': lettering sits in a pocket, top surface level.
   function meshes(d, o) {
-    o = Object.assign({ base: SPEC.base, layer: SPEC.raised, style: 'raised' }, o || {});
+    o = Object.assign({ base: SPEC.base, layer: SPEC.raised, sink: SPEC.sink, style: 'raised' }, o || {});
     const off = [(d.bounds.x0 + d.bounds.x1) / 2, (d.bounds.y0 + d.bounds.y1) / 2];
     const g = MeshBuilder(off), t = MeshBuilder(off);
     const top = o.base + o.layer;
@@ -8198,8 +8198,14 @@ html.kind-plate #fontField, html.kind-plate #tightField, html.kind-plate #nameCo
       g.walls(d.inlay, pocket, top, true); g.cap(d.inlay, pocket, true); // pocket sides and floor
       t.cap(d.inlay, pocket, false); t.walls(d.inlay, pocket, top, false); t.cap(d.inlay, top, true);
     } else {
-      g.cap(d.body, 0, false); g.walls(d.body, 0, o.base, false); g.cap(d.body, o.base, true);
-      t.cap(d.inlay, o.base, false); t.walls(d.inlay, o.base, top, false); t.cap(d.inlay, top, true);
+      // lettering sinks into a recess in the base (o.sink deep) so the two colours grip each other, then stands o.layer proud
+      const pk = o.sink > 0 ? o.base - Math.min(o.sink, o.base - 0.4) : o.base;
+      g.cap(d.body, 0, false); g.walls(d.body, 0, o.base, false);
+      if (pk < o.base) {
+        g.cap(d.body.concat(d.inlay), o.base, true);
+        g.walls(d.inlay, pk, o.base, true); g.cap(d.inlay, pk, true);
+      } else g.cap(d.body, o.base, true);
+      t.cap(d.inlay, pk, false); t.walls(d.inlay, pk, top, false); t.cap(d.inlay, top, true);
     }
     return [
       { name: 'Base', mesh: g.done(), slot: 1 },
@@ -8406,7 +8412,7 @@ function rebuild() {
       : K.design(font, text, { cap: +els.size.value, tight: els.tight.checked, border: +els.border.value, loop: els.loop.value, hole: +els.hole.value });
     if (!d0) throw new Error('empty');
     const k = +els.scale.value / 100;
-    const m = { base: K.SPEC.base * k, layer: K.SPEC.raised * k, style };
+    const m = { base: K.SPEC.base * k, layer: K.SPEC.raised * k, sink: K.SPEC.sink * k, style };
     const d = K.scaleDesign(d0, k);
     current = { d, m, text, name: cleanName(text) + ' keyring', parts: K.meshes(d, m), missing: [...new Set(missing)] };
     draw(); chips();
